@@ -20,6 +20,11 @@ public class Main extends Application {
 		}
 	}
 	
+	public void check()
+	{
+		System.out.println("checkkkk");
+	}
+	
 	public static void main(String[] args) {
 		launch(args);
 	}
