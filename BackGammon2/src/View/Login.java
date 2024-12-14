@@ -1,6 +1,5 @@
 package View;
 
-import application.Backgammon;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -32,54 +31,58 @@ public class Login extends Application {
         VBox loginLayout = new VBox(10);
         loginLayout.setStyle("-fx-padding: 20; -fx-alignment: center;");
 
-        
-     // Add a title to the login screen
+        // Add a title to the login screen
         Label titleLabel = new Label("Welcome to CATGammon!");
         titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 40)); // Set font size and weight
         titleLabel.setStyle("-fx-text-fill: white;"); // Set text color to white
-        
-        
+
         // Add login elements
-        Label usernameLabel = new Label("Username:");
-        usernameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 25)); // Bold and larger font
-        usernameLabel.setStyle("-fx-text-fill: white;"); // Set text color to white
+        Label player1Label = new Label("Player 1:");
+        player1Label.setFont(Font.font("Arial", FontWeight.BOLD, 25)); // Bold and larger font
+        player1Label.setStyle("-fx-text-fill: white;"); // Set text color to white
 
-        
-        TextField usernameField = new TextField();
-        usernameField.setMaxWidth(300); // Set maximum width explicitly
-        usernameField.setPrefHeight(30); // Set height explicitly
+        TextField player1Field = new TextField();
+        player1Field.setMaxWidth(300); // Set maximum width explicitly
+        player1Field.setPrefHeight(30); // Set height explicitly
 
-        Label passwordLabel = new Label("Password:");
-        passwordLabel.setFont(Font.font("Arial", FontWeight.BOLD, 25)); // Bold and larger font
-        passwordLabel.setStyle("-fx-text-fill: white;"); // Set text color to white
- 
-        
-        PasswordField passwordField = new PasswordField();
-        passwordField.setMaxWidth(300); // Set maximum width explicitly
-        passwordField.setPrefHeight(30); // Set height explicitly
+        Label player2Label = new Label("Player 2:");
+        player2Label.setFont(Font.font("Arial", FontWeight.BOLD, 25)); // Bold and larger font
+        player2Label.setStyle("-fx-text-fill: white;"); // Set text color to white
+
+        TextField player2Field = new TextField();
+        player2Field.setMaxWidth(300); // Set maximum width explicitly
+        player2Field.setPrefHeight(30); // Set height explicitly
 
         Button loginButton = new Button("Login");
         Label errorLabel = new Label();
         errorLabel.setStyle("-fx-text-fill: red;");
 
         loginButton.setOnAction(event -> {
-            String username = usernameField.getText();
-            String password = passwordField.getText();
+            String player1 = player1Field.getText();
+            String player2 = player2Field.getText();
 
-            if (validateCredentials(username, password)) {
-                // Transition to Backgammon game
-                Backgammon game = new Backgammon();
-                game.start(primaryStage); // Call the Backgammon game
+            if (validateCredentials(player1, player2)) {
+                // Transition to Game Level Selection screen
+                GameLevelScreen levelSelectionScreen = new GameLevelScreen();
+                levelSelectionScreen.start(primaryStage); // Navigate to the LevelSelectionScreen
             } else {
                 errorLabel.setText("Invalid username or password.");
             }
         });
 
+        // Add "History" button
+        Button historyButton = new Button("History");
+        historyButton.setOnAction(event -> {
+            HistoryScreen historyScreen = new HistoryScreen();
+            historyScreen.start(primaryStage); // Switch to the History screen
+        });
+
         // Add all elements to the VBox
         loginLayout.getChildren().addAll(titleLabel,
-                usernameLabel, usernameField,
-                passwordLabel, passwordField,
-                loginButton, errorLabel
+                player1Label, player1Field,
+                player2Label, player2Field,
+                loginButton, errorLabel,
+                historyButton // Add History button
         );
 
         // Add the background and login layout to the root
@@ -92,9 +95,10 @@ public class Login extends Application {
         primaryStage.show();
     }
 
-    private boolean validateCredentials(String username, String password) {
+    private boolean validateCredentials(String player1, String player2) {
         // Replace with real authentication logic
-        return "user".equals(username) && "password".equals(password);
+        return player1 != null && !player1.trim().isEmpty() &&
+               player2 != null && !player2.trim().isEmpty();
     }
 
     public static void main(String[] args) {

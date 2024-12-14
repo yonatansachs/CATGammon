@@ -84,6 +84,7 @@ public class GamePlay extends Pawns{
 
     }
 
+    
     public void setUp(GridPane[] col,int column,int howMany,boolean color){
         
         int[] oneBlue=oneBlue();
