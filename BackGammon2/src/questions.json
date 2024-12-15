@@ -1,0 +1,29 @@
+[
+  {
+    "questionText": "What is software engineering?",
+    "options": ["A type of hardware maintenance.",
+                "The application of engineering principles to software development.",
+                "Writing scripts for websites.",
+                "Designing computer hardware."],
+    "correctAnswerIndex": 1,
+    "difficulty": "Easy"
+  },
+  {
+    "questionText": "What is software quality assurance (SQA)?",
+    "options": ["A method to ensure software works as expected.",
+                "Writing code for software.",
+                "Designing user interfaces.",
+                "Testing computer hardware."],
+    "correctAnswerIndex": 0,
+    "difficulty": "Medium"
+  },
+  {
+    "questionText": "Explain the concept of test automation and its advantages over manual testing.",
+    "options": ["Test automation replaces software engineers.",
+                "Test automation is faster, more reliable, and reduces repetitive tasks.",
+                "Test automation is slower than manual testing.",
+                "Test automation is used only in debugging."],
+    "correctAnswerIndex": 1,
+    "difficulty": "Hard"
+  }
+]

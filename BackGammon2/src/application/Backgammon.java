@@ -33,7 +33,9 @@ import Control.GamePlay;
 public class Backgammon extends Application {
 
 	
-    @Override
+    private String difficulty;
+
+	@Override
     
     public void start(Stage primaryStage) {
         
@@ -86,7 +88,7 @@ public class Backgammon extends Application {
 
         }
 
-        GamePlay theGame = new GamePlay(gridCols,primaryStage);
+        GamePlay theGame = new GamePlay(gridCols,primaryStage, difficulty);
 
         //************************************
         //************************************
@@ -175,6 +177,10 @@ public class Backgammon extends Application {
     public static void main(String[] args) {
         launch(args);   
     }
+
+	public void setDifficulty(String selectedDifficulty) {
+		this.difficulty = selectedDifficulty;
+	}
 
 
 

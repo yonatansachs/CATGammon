@@ -16,68 +16,73 @@ import javafx.stage.Stage;
 
 public class GameLevelScreen extends Application {
 
+    private String selectedDifficulty; // To hold the selected difficulty level
+
     @Override
     public void start(Stage primaryStage) {
-        // Create a StackPane for the layout to layer the background and content
-        StackPane root = new StackPane();
-
-        // Add the background image with GaussianBlur
+        // Background image with Gaussian blur
         Image backgroundImage = new Image(getClass().getResourceAsStream("backgammon2.png"));
         ImageView backgroundImageView = new ImageView(backgroundImage);
-        backgroundImageView.setFitWidth(1000); // Adjust to your scene width
-        backgroundImageView.setFitHeight(700); // Adjust to your scene height
+        backgroundImageView.setFitWidth(1000);
+        backgroundImageView.setFitHeight(700);
         backgroundImageView.setPreserveRatio(false);
-        backgroundImageView.setEffect(new GaussianBlur(50)); // Apply Gaussian blur effect
+        backgroundImageView.setEffect(new GaussianBlur(50));
 
-        // Create a VBox for the level selection layout
+        // Main layout
+        StackPane root = new StackPane();
         VBox levelLayout = new VBox(20);
         levelLayout.setStyle("-fx-padding: 20; -fx-alignment: center;");
 
-        // Add title to the screen
-        Label titleLabel = new Label("Select Game Level");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 40)); // Set font size and weight
-        titleLabel.setStyle("-fx-text-fill: white;"); // Set text color to white
+        // Title Label
+        Label titleLabel = new Label("Select Game Difficulty");
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 40));
+        titleLabel.setStyle("-fx-text-fill: white;");
 
-        // Create buttons for each level
-        Button easyButton = new Button("Easy");
-        Button mediumButton = new Button("Medium");
-        Button hardButton = new Button("Hard");
+        // Difficulty Buttons
+        Button easyButton = createStyledButton("Easy");
+        Button mediumButton = createStyledButton("Medium");
+        Button hardButton = createStyledButton("Hard");
 
-        // Style the buttons
-        easyButton.setStyle("-fx-font-size: 18; -fx-pref-width: 200; -fx-pref-height: 50;");
-        mediumButton.setStyle("-fx-font-size: 18; -fx-pref-width: 200; -fx-pref-height: 50;");
-        hardButton.setStyle("-fx-font-size: 18; -fx-pref-width: 200; -fx-pref-height: 50;");
+        // Button Actions
+        easyButton.setOnAction(event -> startBackgammon(primaryStage, "Easy"));
+        mediumButton.setOnAction(event -> startBackgammon(primaryStage, "Medium"));
+        hardButton.setOnAction(event -> startBackgammon(primaryStage, "Hard"));
 
-        // Add actions for each button to open the Backgammon screen
-        easyButton.setOnAction(event -> openBackgammon(primaryStage, "Easy"));
-        mediumButton.setOnAction(event -> openBackgammon(primaryStage, "Medium"));
-        hardButton.setOnAction(event -> openBackgammon(primaryStage, "Hard"));
-
-        // Add a "Back" button to return to the login screen
-        Button backButton = new Button("Back");
-        backButton.setStyle("-fx-font-size: 18; -fx-pref-width: 200; -fx-pref-height: 50;");
+        // Back Button
+        Button backButton = createStyledButton("Back");
         backButton.setOnAction(event -> {
             Login loginScreen = new Login();
-            loginScreen.start(primaryStage); // Go back to the login screen
+            loginScreen.start(primaryStage);
         });
 
-        // Add all elements to the VBox
+        // Add elements to layout
         levelLayout.getChildren().addAll(titleLabel, easyButton, mediumButton, hardButton, backButton);
-
-        // Add the background and level layout to the root
         root.getChildren().addAll(backgroundImageView, levelLayout);
 
-        // Create and set the scene
-        Scene levelScene = new Scene(root, 1000, 700); // Adjust size as needed
+        // Scene setup
+        Scene scene = new Scene(root, 1000, 700);
         primaryStage.setTitle("Game Level Selection");
-        primaryStage.setScene(levelScene);
+        primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    private void openBackgammon(Stage primaryStage, String level) {
-        System.out.println("Starting Backgammon game with level: " + level); // Log the level selected
-        Backgammon game = new Backgammon(); // Assuming Backgammon is your game class
-        game.start(primaryStage); // Transition to the Backgammon game
+    /**
+     * Helper method to create styled buttons.
+     */
+    private Button createStyledButton(String text) {
+        Button button = new Button(text);
+        button.setStyle("-fx-font-size: 18; -fx-pref-width: 200; -fx-pref-height: 50;");
+        return button;
+    }
+
+    /**
+     * Opens the Backgammon game and passes the selected difficulty.
+     */
+    private void startBackgammon(Stage primaryStage, String difficulty) {
+        System.out.println("Starting Backgammon game with level: " + difficulty);
+        Backgammon game = new Backgammon();
+        game.setDifficulty(difficulty); // Pass difficulty to Backgammon
+        game.start(primaryStage);
     }
 
     public static void main(String[] args) {

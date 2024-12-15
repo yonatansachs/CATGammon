@@ -1,6 +1,9 @@
 package Control;
 
+import java.util.Random;
+
 import Model.Pawns;
+import View.QuestionScreen;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
@@ -16,72 +19,110 @@ import javafx.stage.Stage;
 
 public class GamePlay extends Pawns{
     
-    private Stage b;
-    
+	private String difficulty;
+	private Stage b;
     private final Pawns pawn = new Pawns();
-
     private final int[] blueUp = new int[30];
     private final int[] blueDown = new int[30];
     private final int[] blackUp = new int[30];
     private final int[] blackDown = new int[30];
-    
-    private int outBlue=0;
-    private int outBlack=0;
-    
-    private int times=2;
+    private int outBlue = 0;
+    private int outBlack = 0;
+    private int times = 2;
+    private int countDice = 1;
+    private int[] sevenNum = new int[30];
+    private Stage mainStage;
 
-    private int countDice=1;
-    
-    private int[] sevenNum=new int[30];
-    
-    public GamePlay(GridPane[] setP,Stage a){
-        
-        b=a;
-        
-        for(int i=0;i<sevenNum.length;i++)
-        {
-           sevenNum[i]= 0;   
-        }    
-        for(int i=0;i<blueUp.length;i++)
-        {
-           blueUp[i]= 0;   
+    private int surpriseSpot = -1;
+
+    public GamePlay(GridPane[] setP, Stage a, String difficulty) {
+    	this.difficulty = difficulty;
+        b = a;
+
+        for (int i = 0; i < sevenNum.length; i++) {
+            sevenNum[i] = 0;
         }
-        for(int i=0;i<blackUp.length;i++)
-        {
-           blackUp[i]= 0;   
+        for (int i = 0; i < blueUp.length; i++) {
+            blueUp[i] = 0;
         }
-        for(int i=0;i<blueDown.length;i++)
-        {
-           blueDown[i]= 0;   
+        for (int i = 0; i < blackUp.length; i++) {
+            blackUp[i] = 0;
         }
-        for(int i=0;i<blackDown.length;i++)
-        {
-           blackDown[i]= 0;   
+        for (int i = 0; i < blueDown.length; i++) {
+            blueDown[i] = 0;
+        }
+        for (int i = 0; i < blackDown.length; i++) {
+            blackDown[i] = 0;
         }
 
-        //for blue pawns
-        setDown(setP,18,1,true);setDown(setP,18,1,true);
-        setDown(setP,18,1,true);setDown(setP,18,1,true);setDown(setP,18,1,true);
+        // Randomly choose a spot
+        if (!difficulty.equals("Easy")) {
+            surpriseSpot = selectRandomSpot();
+            System.out.println("Surprise spot selected: " + surpriseSpot);
+        } else {
+            surpriseSpot = -1;
+        }
         
-        setDown(setP,16,1,true);setDown(setP,16,1,true);setDown(setP,16,1,true);
-        
-        setUp(setP,11,1,true);setUp(setP,11,1,true);setUp(setP,11,1,true);
-        setUp(setP,11,1,true);setUp(setP,11,1,true);
-        
-        setUp(setP,0,1,true);setUp(setP,0,1,true);
-        
-        //for black pawns
-        setDown(setP,23,1,false);setDown(setP,23,1,false);
-        
-        setDown(setP,12,1,false);setDown(setP,12,1,false);
-        setDown(setP,12,1,false);setDown(setP,12,1,false);setDown(setP,12,1,false);
-        
-        setUp(setP,7,1,false);setUp(setP,7,1,false);setUp(setP,7,1,false);
-        
-        setUp(setP,5,1,false);setUp(setP,5,1,false);setUp(setP,5,1,false);
-        setUp(setP,5,1,false);setUp(setP,5,1,false);
-       
+        initializePawns(setP);
+    }
+    
+    private void handleSurpriseSpot(GridPane[] grid, int column) {
+        if (!difficulty.equals("Easy") && column == surpriseSpot) {
+            System.out.println("Surprise spot reached!");
+            QuestionScreen questionScreen = new QuestionScreen();
+            questionScreen.show(mainStage, difficulty);
+        }
+    }
 
+
+
+    private void initializePawns(GridPane[] setP) {
+        setDown(setP, 18, 1, true);
+        setDown(setP, 18, 1, true);
+        setDown(setP, 18, 1, true);
+        setDown(setP, 18, 1, true);
+        setDown(setP, 18, 1, true);
+
+        setDown(setP, 16, 1, true);
+        setDown(setP, 16, 1, true);
+        setDown(setP, 16, 1, true);
+
+        setUp(setP, 11, 1, true);
+        setUp(setP, 11, 1, true);
+        setUp(setP, 11, 1, true);
+        setUp(setP, 11, 1, true);
+        setUp(setP, 11, 1, true);
+
+        setUp(setP, 0, 1, true);
+        setUp(setP, 0, 1, true);
+
+        setDown(setP, 23, 1, false);
+        setDown(setP, 23, 1, false);
+
+        setDown(setP, 12, 1, false);
+        setDown(setP, 12, 1, false);
+        setDown(setP, 12, 1, false);
+        setDown(setP, 12, 1, false);
+        setDown(setP, 12, 1, false);
+
+        setUp(setP, 7, 1, false);
+        setUp(setP, 7, 1, false);
+        setUp(setP, 7, 1, false);
+
+        setUp(setP, 5, 1, false);
+        setUp(setP, 5, 1, false);
+        setUp(setP, 5, 1, false);
+        setUp(setP, 5, 1, false);
+        setUp(setP, 5, 1, false);
+    }
+
+    private int selectRandomSpot() {
+        Random random = new Random();
+        return random.nextInt(24); // Randomly choose between 0 and 23
+    }
+
+    public int getSurpriseSpot() {
+        return surpriseSpot;
     }
 
     
@@ -401,29 +442,22 @@ public class GamePlay extends Pawns{
         }
     }
     
-    public void blueMoves(GridPane[] grid,int column,int dice){
+    public void blueMoves(GridPane[] grid, int column, int dice) {
+        if ((column < 12) && (column + dice < 12)) {
+            removeUp(grid, column, true);
+            setUp(grid, column + dice, 1, true);
+        } else if ((column < 12) && (column + dice >= 12)) {
+            removeUp(grid, column, true);
+            setDown(grid, column + dice, 1, true);
+        } else {
+            removeDown(grid, column, true);
+            setDown(grid, column + dice, 1, true);
+        }
 
-                
-                if( (column < 12) && (column+dice<12) ){
-                
-                    removeUp(grid,column,true);
-                    setUp(grid,column+dice,1,true);
-            
-                
-                }else if( (column < 12) && (column+dice>=12) ){
-                
-                    removeUp(grid,column,true);
-                    setDown(grid,column+dice,1,true);
-                
-                }else{
-                
-                    removeDown(grid,column,true);
-                    setDown(grid,column+dice,1,true);
-
-                }              
-    grid[column+dice].setOnMouseClicked(null);
-
+        // Checking if the pawn reached the spot
+        handleSurpriseSpot(grid, column + dice);
     }
+
     private boolean played=true;private boolean workIt=true;
     public void takeIt(GridPane[] grid,int[] blue,int dice){
     boolean biggest=false;
@@ -1210,29 +1244,22 @@ public class GamePlay extends Pawns{
 
     }
     
-    public void blackMoves(GridPane[] grid,int column,int dice){
+    public void blackMoves(GridPane[] grid, int column, int dice) {
+        if ((column > 11) && (column - dice > 11)) {
+            removeDown(grid, column, false);
+            setDown(grid, column - dice, 1, false);
+        } else if ((column > 11) && (column - dice <= 11)) {
+            removeDown(grid, column, false);
+            setUp(grid, column - dice, 1, false);
+        } else {
+            removeUp(grid, column, false);
+            setUp(grid, column - dice, 1, false);
+        }
 
-                
-                if( (column > 11) && (column-dice>11) ){
-                
-                    removeDown(grid,column,false);
-                    setDown(grid,column-dice,1,false);
-            
-                
-                }else if( (column >11) && (column-dice<=11) ){
-                
-                    removeDown(grid,column,false);
-                    setUp(grid,column-dice,1,false);
-                
-                }else{
-                
-                    removeUp(grid,column,false);
-                    setUp(grid,column-dice,1,false);
-
-                }              
-    grid[column-dice].setOnMouseClicked(null);
-
+        // Checking if the pawn reached the spot
+        handleSurpriseSpot(grid, column - dice);
     }
+
         
     public int[] whereBlue(){
     

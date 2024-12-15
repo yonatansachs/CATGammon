@@ -1,5 +1,6 @@
 package View;
 
+import application.Backgammon;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -14,6 +15,7 @@ import javafx.stage.Stage;
 
 public class Login extends Application {
 
+	
     @Override
     public void start(Stage primaryStage) {
         // Create a StackPane for the layout to layer the background and login content
@@ -94,12 +96,20 @@ public class Login extends Application {
         primaryStage.setScene(loginScene);
         primaryStage.show();
     }
+    
+    public void openBackgammon(Stage primaryStage, String selectedDifficulty) {
+        Backgammon game = new Backgammon();
+        game.setDifficulty(selectedDifficulty); // Add a setter method to Backgammon
+        game.start(primaryStage);
+    }
+
 
     private boolean validateCredentials(String player1, String player2) {
         // Replace with real authentication logic
         return player1 != null && !player1.trim().isEmpty() &&
                player2 != null && !player2.trim().isEmpty();
     }
+
 
     public static void main(String[] args) {
         launch(args);
