@@ -852,8 +852,13 @@ public class GamePlay extends Pawns{
         for(int gg=0; gg<24; gg++){        
         if((gg+dOne<24) && (gg+dTwo<24) ){    
         final int l=gg;        
-        if( (blue[gg] !=0) && ( (oneBlack[gg+dOne]==1) || (oneBlack[gg+dTwo]==1) || (empty[gg+dOne]==1) || (empty[gg+dTwo]==1) || (blue[gg+dOne] !=0) || (blue[gg+dTwo] !=0) ) ){
-            
+        if (blue[gg]!=0 &&
+        		((gg+dOne>=0 && gg+dOne <24 &&
+        		(oneBlack[gg+dOne] == 1|| empty[gg+dOne] == 1|| blue[gg+dOne]!=0)) ||
+        		(gg +dTwo >=0 && gg+dTwo<24 &&
+        		(oneBlack[gg+dTwo] == 1|| empty[gg+dTwo] == 1 || blue[gg+dTwo] !=0))))
+        		{
+        	
             grid[gg].setStyle("-fx-border-color:pink;");
             grid[gg].setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
@@ -1159,10 +1164,16 @@ public class GamePlay extends Pawns{
                             
         for(int gg=0; gg<24; gg++){
         
-            if( (gg-dOne>-1) && (gg-dTwo>-1) ){
+            if( (gg-dOne>-1) || (gg-dTwo>-1) ){
             final int l=gg;
-        
-                if( (black[gg] !=0) && ( (oneBlue[gg-dOne]==1) || (oneBlue[gg-dTwo]==1) || (empty[gg-dOne]==1) || (empty[gg-dTwo]==1) || (black[gg-dOne] !=0) || (black[gg-dTwo] !=0) ) ){
+                	
+                if((black[gg]!=0)&&
+                		((gg-dOne>-1 && oneBlue[gg-dOne] == 1) ||
+                		(gg - dTwo > -1 && oneBlue[gg-dTwo]==1) ||
+                		(gg-dOne > - 1 && empty[gg - dOne] == 1) ||
+                		(gg-dTwo> -1 && empty[gg-dTwo] == 1) ||
+                		(gg - dOne > -1 && black[gg-dOne] != 0)||
+                		(gg-dTwo > -1 && black [gg  -dTwo] != 0 ))) {
 
                     grid[gg].setStyle("-fx-border-color:green;");
                     grid[gg].setOnMouseClicked(new EventHandler<MouseEvent>() {
@@ -1209,10 +1220,12 @@ public class GamePlay extends Pawns{
                 blackMoves(grid,column,a);
                 
                 grid[column-a].setOnMouseClicked(null);
-                grid[column-b].setOnMouseClicked(null);
                 grid[column-a].setStyle(null);
+                if (column - b>-1) {
+                grid[column-b].setOnMouseClicked(null);
                 grid[column-b].setStyle(null);
-
+                
+                }
 
                 if(countDice<times)
                 blackPlays(grid,b,b);
@@ -1233,11 +1246,14 @@ public class GamePlay extends Pawns{
             public void handle(MouseEvent e) {
 
                 blackMoves(grid,column,b);
-                
-                grid[column-a].setOnMouseClicked(null);
-                grid[column-b].setOnMouseClicked(null);
-                grid[column-a].setStyle(null);
                 grid[column-b].setStyle(null);
+                grid[column-b].setOnMouseClicked(null);
+                if (column - a >-1)
+                {
+                    grid[column-a].setStyle(null);
+                    grid[column-a].setOnMouseClicked(null);
+
+                }
                 
                 if(countDice<times)
                 blackPlays(grid,a,a);
@@ -1361,7 +1377,7 @@ public class GamePlay extends Pawns{
 
     public boolean blueEnds(int[] blue){
 
-     for(int q=17; q>0;q--){
+     for(int q=17; q>=0;q--){
 
      if(blue[q]!=0)
          return false;
@@ -1372,7 +1388,7 @@ public class GamePlay extends Pawns{
 
     public boolean blackEnds(int[] black){
 
-     for(int q=6; q<23;q++){
+     for(int q=6; q<=23;q++){
 
      if(black[q]!=0)
          return false;
