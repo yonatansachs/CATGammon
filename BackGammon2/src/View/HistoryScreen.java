@@ -1,60 +1,119 @@
 package View;
 
+import Model.GameRecord;
+import Model.SysData;
 import javafx.application.Application;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 public class HistoryScreen extends Application {
 
+    private final SysData sysData = SysData.getInstance();
+
     @Override
     public void start(Stage primaryStage) {
-        // Create a StackPane for the layout to layer the background and history content
+        // Background setup
         StackPane root = new StackPane();
-
-        // Add the background image with GaussianBlur
         Image backgroundImage = new Image(getClass().getResourceAsStream("backgammon2.png"));
         ImageView backgroundImageView = new ImageView(backgroundImage);
-        backgroundImageView.setFitWidth(1000); // Adjust to your scene width
-        backgroundImageView.setFitHeight(700); // Adjust to your scene height
+        backgroundImageView.setFitWidth(1000);
+        backgroundImageView.setFitHeight(700);
         backgroundImageView.setPreserveRatio(false);
-        backgroundImageView.setEffect(new GaussianBlur(50)); // Apply Gaussian blur effect
+        backgroundImageView.setEffect(new GaussianBlur(50));
 
-        // Create a VBox for the history layout
-        VBox historyLayout = new VBox(20);
-        historyLayout.setStyle("-fx-padding: 20; -fx-alignment: center;");
+        // Title with shadow effect
+        Label title = new Label("Game History");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 40));
+        title.setTextFill(Color.WHITE);
+        title.setEffect(new DropShadow(5, Color.BLACK));
+        title.setPadding(new Insets(10, 0, 20, 0));
 
-        // Add title and content to the history screen
-        Label historyTitle = new Label("Game History");
-        historyTitle.setStyle("-fx-font-size: 30; -fx-font-weight: bold; -fx-text-fill: white;");
+     // TableView for game history
+        TableView<GameRecord> historyTable = new TableView<>();
+        historyTable.setPrefHeight(400);
+        historyTable.setStyle("-fx-background-color: white; -fx-border-radius: 10;");
 
-        Label historyContent = new Label("Game history will be displayed here.");
-        historyContent.setStyle("-fx-font-size: 18; -fx-text-fill: white;");
+        // Table columns
+        TableColumn<GameRecord, String> player1Col = new TableColumn<>("Player 1");
+        player1Col.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPlayer1()));
+        player1Col.setMinWidth(150);
+        player1Col.setStyle("-fx-alignment: CENTER; -fx-font-size: 16px;");
 
-        // Add a "Back" button to return to the login screen
+        TableColumn<GameRecord, String> player2Col = new TableColumn<>("Player 2");
+        player2Col.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPlayer2()));
+        player2Col.setMinWidth(150);
+        player2Col.setStyle("-fx-alignment: CENTER; -fx-font-size: 16px;");
+
+        TableColumn<GameRecord, String> winnerCol = new TableColumn<>("Winner");
+        winnerCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getWinner()));
+        winnerCol.setMinWidth(150);
+        winnerCol.setStyle("-fx-alignment: CENTER; -fx-font-size: 16px;");
+
+        TableColumn<GameRecord, String> difficultyCol = new TableColumn<>("Difficulty");
+        difficultyCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDifficulty()));
+        difficultyCol.setMinWidth(150);
+        difficultyCol.setStyle("-fx-alignment: CENTER; -fx-font-size: 16px;");
+
+        TableColumn<GameRecord, String> durationCol = new TableColumn<>("Duration");
+        durationCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDuration()));
+        durationCol.setMinWidth(150);
+        durationCol.setStyle("-fx-alignment: CENTER; -fx-font-size: 16px;");
+
+        // Add columns to the table
+        historyTable.getColumns().addAll(player1Col, player2Col, winnerCol, difficultyCol, durationCol);
+
+        // Prevent the empty column from showing up
+        historyTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Populate table with history data
+        ObservableList<GameRecord> historyData = FXCollections.observableArrayList(sysData.getHistory());
+        historyTable.setItems(historyData);
+
+
+        // Back button
         Button backButton = new Button("Back");
-        backButton.setStyle("-fx-font-size: 18; -fx-pref-width: 200; -fx-pref-height: 50;");
+        backButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backButton.setStyle(
+                "-fx-background-color: linear-gradient(#6a11cb, #2575fc);" +
+                "-fx-text-fill: white; -fx-background-radius: 20; -fx-pref-width: 120;");
         backButton.setOnAction(event -> {
             Login loginScreen = new Login();
-            loginScreen.start(primaryStage); // Go back to the login screen
+            loginScreen.start(primaryStage);
         });
 
-        // Add all elements to the VBox
-        historyLayout.getChildren().addAll(historyTitle, historyContent, backButton);
+        // Layout setup
+        BorderPane layout = new BorderPane();
+        layout.setTop(title);
+        layout.setCenter(historyTable);
+        layout.setBottom(backButton);
+        BorderPane.setAlignment(title, Pos.CENTER);
+        BorderPane.setAlignment(backButton, Pos.CENTER);
+        BorderPane.setMargin(backButton, new Insets(20, 0, 20, 0));
 
-        // Add the background and history layout to the root
-        root.getChildren().addAll(backgroundImageView, historyLayout);
+        root.getChildren().addAll(backgroundImageView, layout);
 
-        // Create and set the scene
-        Scene historyScene = new Scene(root, 1000, 700);
+        // Scene setup
+        Scene scene = new Scene(root, 1000, 700);
         primaryStage.setTitle("Game History");
-        primaryStage.setScene(historyScene);
+        primaryStage.setScene(scene);
         primaryStage.show();
     }
 

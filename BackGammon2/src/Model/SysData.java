@@ -9,15 +9,15 @@ public class SysData {
 
     private static SysData instance; // Singleton instance
     private final List<Question> questions; // List to store questions
-    //private final List<GameRecord> history; // List to store game history
+    private final List<GameRecord> history; // List to store game history
     private final String QUESTIONS_FILE = "src/questions.json";
-    //private final String HISTORY_FILE = "src/game_history.json";
+    private final String HISTORY_FILE = "src/game_history.json";
 
     private SysData() {
         questions = new ArrayList<>();
-        //history = new ArrayList<>();
+        history = new ArrayList<>();
         loadQuestions();
-        //loadHistory();
+        loadHistory();
     }
 
     public static SysData getInstance() {
@@ -86,22 +86,67 @@ public class SysData {
         }
     }
 
-    /*// Load Game History
     private void loadHistory() {
         try (BufferedReader br = new BufferedReader(new FileReader(HISTORY_FILE))) {
+            history.clear(); // Clear the current history list
+            StringBuilder jsonContent = new StringBuilder();
             String line;
+
+            // Read the entire JSON file into a single string
             while ((line = br.readLine()) != null) {
-                String[] parts = line.split(",");
-                if (parts.length == 5) {
-                    history.add(new GameRecord(parts[0], parts[1], parts[2], parts[3], parts[4]));
-                }
+                jsonContent.append(line.trim());
             }
+
+            // Remove square brackets and split individual records
+            String content = jsonContent.toString().replace("[", "").replace("]", "");
+            String[] records = content.split("\\},\\{");
+
+            for (String record : records) {
+                // Clean up braces and quotes
+                record = record.replace("{", "").replace("}", "").replace("\"", "");
+                String[] fields = record.split(",");
+
+                // Temporary variables to hold field values
+                String player1 = "", player2 = "", winner = "", difficulty = "", duration = "";
+
+                for (String field : fields) {
+                    String[] keyValue = field.split(":", 2);
+                    if (keyValue.length < 2) continue;
+
+                    String key = keyValue[0].trim();
+                    String value = keyValue[1].trim();
+
+                    // Assign values based on keys
+                    switch (key) {
+                        case "player1":
+                            player1 = value;
+                            break;
+                        case "player2":
+                            player2 = value;
+                            break;
+                        case "winner":
+                            winner = value;
+                            break;
+                        case "difficulty":
+                            difficulty = value;
+                            break;
+                        case "duration":
+                            duration = value;
+                            break;
+                    }
+                }
+
+                // Add parsed record to history
+                history.add(new GameRecord(player1, player2, winner, difficulty, duration));
+            }
+
         } catch (IOException e) {
             System.err.println("Failed to load game history: " + e.getMessage());
         }
-    }*/
+    }
 
-    /*public void saveHistory() {
+
+    public void saveHistory() {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(HISTORY_FILE))) {
             for (GameRecord record : history) {
                 bw.write(String.format("%s,%s,%s,%s,%s%n",
@@ -112,17 +157,23 @@ public class SysData {
         } catch (IOException e) {
             System.err.println("Failed to save game history: " + e.getMessage());
         }
-    }*/
+    }
 
-    /*// Add Game Record
+    // Add Game Record
     public void addGameRecord(GameRecord record) {
         history.add(record);
         saveHistory();
-    }*/
+    }
 
-    /*public List<GameRecord> getHistory() {
+    public List<GameRecord> getHistory() {
         return new ArrayList<>(history);
-    }*/
+    }
+    
+    public List<GameRecord> getGameHistory() {
+        return new ArrayList<>(history); // Return the full history list directly
+    }
+
+
 
     public Question getRandomQuestion(String difficulty) {
         List<Question> filteredQuestions = new ArrayList<>();
