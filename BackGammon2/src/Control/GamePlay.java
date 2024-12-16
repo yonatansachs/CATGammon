@@ -828,7 +828,9 @@ public class GamePlay extends Pawns{
                 public void handle(MouseEvent e) {
                 setUp(grid,dOne-1,1,true);
                 grid[dOne-1].setStyle(null);
-                outBlue--;
+                outBlue--;countDice++;grid[dOne-1].setOnMouseClicked(null);
+                grid[dTwo-1].setStyle(null);grid[dTwo-1].setOnMouseClicked(null);
+                bluePlays(grid,dTwo,dTwo);
                 }                
                 });
             }
@@ -842,6 +844,9 @@ public class GamePlay extends Pawns{
                 setUp(grid,dTwo-1,1,true);
                 grid[dTwo-1].setStyle(null);
                 outBlue--;
+                countDice++;grid[dTwo-1].setOnMouseClicked(null);
+                grid[dOne-1].setStyle(null);grid[dOne-1].setOnMouseClicked(null);
+                bluePlays(grid,dOne,dOne);
                 }                
                 });
             }//if
@@ -1142,6 +1147,9 @@ public class GamePlay extends Pawns{
                 setDown(grid,24-dOne,1,false);
                 grid[24-dOne].setStyle(null);
                 outBlack--;
+                countDice++;grid[24-dOne].setStyle(null);grid[24-dOne].setOnMouseClicked(null);
+                grid[24-dTwo].setStyle(null);grid[24-dTwo].setOnMouseClicked(null);
+                blackPlays(grid,dTwo,dTwo);
                 }                
                 });
             }
@@ -1155,6 +1163,9 @@ public class GamePlay extends Pawns{
                 setDown(grid,24-dTwo,1,false);
                 grid[24-dTwo].setStyle(null);
                 outBlack--;
+                countDice++;grid[24-dTwo].setStyle(null);grid[24-dTwo].setOnMouseClicked(null);
+                grid[24-dOne].setStyle(null);grid[24-dOne].setOnMouseClicked(null);
+                blackPlays(grid,dOne,dOne);
                 }                
                 });
             } 
