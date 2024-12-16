@@ -7,6 +7,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -27,9 +31,17 @@ public class QuestionScreen {
         questionStage.initOwner(owner);
         questionStage.initModality(Modality.APPLICATION_MODAL);
 
+        // Background Image with GaussianBlur
+        Image backgroundImage = new Image(getClass().getResourceAsStream("backgammon2.png"));
+        ImageView backgroundImageView = new ImageView(backgroundImage);
+        backgroundImageView.setFitWidth(400); // Adjust to fit the scene
+        backgroundImageView.setFitHeight(300);
+        backgroundImageView.setPreserveRatio(false);
+        backgroundImageView.setEffect(new GaussianBlur(50));
+
         // Create the UI components
         Label questionLabel = new Label(randomQuestion.getQuestionText());
-        questionLabel.setStyle("-fx-font-size: 16px; -fx-wrap-text: true; -fx-text-fill: black;");
+        questionLabel.setStyle("-fx-font-size: 16px; -fx-wrap-text: true; -fx-text-fill: white;");
         questionLabel.setAlignment(Pos.CENTER);
         questionLabel.setWrapText(true);
 
@@ -37,7 +49,7 @@ public class QuestionScreen {
         optionsBox.setAlignment(Pos.CENTER);
 
         // Buttons for the answer options
-        String[] options = randomQuestion.getOptions(); // Ensure all options are fetched correctly
+        String[] options = randomQuestion.getOptions();
         Button[] optionButtons = new Button[options.length];
 
         for (int i = 0; i < options.length; i++) {
@@ -47,9 +59,9 @@ public class QuestionScreen {
 
             optionButtons[i].setOnAction(event -> {
                 if (selectedOption == randomQuestion.getCorrectAnswerIndex()) {
-                    showCorrectMessage(questionStage); // Correct answer clicked
+                    showCorrectMessage(questionStage);
                 } else {
-                    showWrongMessage(); // Incorrect answer clicked
+                    showWrongMessage();
                 }
             });
         }
@@ -57,9 +69,13 @@ public class QuestionScreen {
         optionsBox.getChildren().addAll(optionButtons);
 
         // Layout
-        VBox root = new VBox(20, questionLabel, optionsBox);
-        root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: lightblue; -fx-padding: 20;");
+        VBox rootLayout = new VBox(20, questionLabel, optionsBox);
+        rootLayout.setAlignment(Pos.CENTER);
+
+        // StackPane to layer the background and content
+        StackPane root = new StackPane();
+        root.getChildren().addAll(backgroundImageView, rootLayout);
+        root.setStyle("-fx-padding: 20;");
 
         // Scene
         Scene scene = new Scene(root, 400, 300);
@@ -93,30 +109,3 @@ public class QuestionScreen {
         alert.showAndWait();
     }
 }
-
-
-/*
-package View;
-
-import javafx.scene.Scene;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-
-public class QuestionScreen {
-
-    public void show(Stage owner) {
-        Stage questionStage = new Stage();
-        questionStage.initOwner(owner);
-        questionStage.initModality(Modality.APPLICATION_MODAL);
-        
-        StackPane root = new StackPane();
-        root.setStyle("-fx-background-color: lightblue;");
-
-        Scene scene = new Scene(root, 300, 200);
-        questionStage.setTitle("Question Screen");
-        questionStage.setScene(scene);
-
-        questionStage.showAndWait();
-    }
-}*/

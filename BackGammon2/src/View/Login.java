@@ -4,18 +4,20 @@ import application.Backgammon;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 public class Login extends Application {
 
-	
     @Override
     public void start(Stage primaryStage) {
         // Create a StackPane for the layout to layer the background and login content
@@ -30,34 +32,47 @@ public class Login extends Application {
         backgroundImageView.setEffect(new GaussianBlur(50)); // Apply Gaussian blur effect
 
         // Create a VBox for the login layout
-        VBox loginLayout = new VBox(10);
+        VBox loginLayout = new VBox(15); // Increased spacing for better layout
         loginLayout.setStyle("-fx-padding: 20; -fx-alignment: center;");
 
         // Add a title to the login screen
         Label titleLabel = new Label("Welcome to CATGammon!");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 40)); // Set font size and weight
-        titleLabel.setStyle("-fx-text-fill: white;"); // Set text color to white
-
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 45)); // Larger font for the title
+        titleLabel.setStyle("-fx-text-fill: white;");
+        titleLabel.setEffect(new DropShadow(10, Color.BLACK)); // Shadow effect for better contrast
+    
         // Add login elements
         Label player1Label = new Label("Player 1:");
-        player1Label.setFont(Font.font("Arial", FontWeight.BOLD, 25)); // Bold and larger font
-        player1Label.setStyle("-fx-text-fill: white;"); // Set text color to white
+        styleLabel(player1Label);
 
         TextField player1Field = new TextField();
-        player1Field.setMaxWidth(300); // Set maximum width explicitly
-        player1Field.setPrefHeight(30); // Set height explicitly
+        styleTextField(player1Field);
 
         Label player2Label = new Label("Player 2:");
-        player2Label.setFont(Font.font("Arial", FontWeight.BOLD, 25)); // Bold and larger font
-        player2Label.setStyle("-fx-text-fill: white;"); // Set text color to white
+        styleLabel(player2Label);
 
         TextField player2Field = new TextField();
-        player2Field.setMaxWidth(300); // Set maximum width explicitly
-        player2Field.setPrefHeight(30); // Set height explicitly
+        styleTextField(player2Field);
 
-        Button loginButton = new Button("Login");
         Label errorLabel = new Label();
-        errorLabel.setStyle("-fx-text-fill: red;");
+        errorLabel.setStyle("-fx-text-fill: red; -fx-font-size: 14px; -fx-font-style: italic;");
+
+        // Button Styling
+        String buttonStyle = "-fx-background-color: #4CAF50; " +    // Green background
+                             "-fx-text-fill: white; " +             // White text
+                             "-fx-font-size: 18px; " +              // Font size
+                             "-fx-background-radius: 20; " +        // Rounded corners
+                             "-fx-font-weight: bold; " +            // Bold text
+                             "-fx-pref-width: 200; " +              // Preferred width
+                             "-fx-pref-height: 40;";                // Preferred height
+
+        String hoverStyle = "-fx-background-color: #45a049;";       // Slightly darker green for hover
+
+        // Login Button
+        Button loginButton = new Button("Login");
+        loginButton.setStyle(buttonStyle);
+        loginButton.setOnMouseEntered(e -> loginButton.setStyle(buttonStyle + hoverStyle));
+        loginButton.setOnMouseExited(e -> loginButton.setStyle(buttonStyle));
 
         loginButton.setOnAction(event -> {
             String player1 = player1Field.getText();
@@ -68,12 +83,16 @@ public class Login extends Application {
                 GameLevelScreen levelSelectionScreen = new GameLevelScreen();
                 levelSelectionScreen.start(primaryStage); // Navigate to the LevelSelectionScreen
             } else {
-                errorLabel.setText("Invalid username or password.");
+                errorLabel.setText("Invalid username or password. Please try again!");
             }
         });
 
-        // Add "History" button
+        // History Button
         Button historyButton = new Button("History");
+        historyButton.setStyle(buttonStyle);
+        historyButton.setOnMouseEntered(e -> historyButton.setStyle(buttonStyle + hoverStyle));
+        historyButton.setOnMouseExited(e -> historyButton.setStyle(buttonStyle));
+
         historyButton.setOnAction(event -> {
             HistoryScreen historyScreen = new HistoryScreen();
             historyScreen.start(primaryStage); // Switch to the History screen
@@ -84,8 +103,7 @@ public class Login extends Application {
                 player1Label, player1Field,
                 player2Label, player2Field,
                 loginButton, errorLabel,
-                historyButton // Add History button
-        );
+                historyButton);
 
         // Add the background and login layout to the root
         root.getChildren().addAll(backgroundImageView, loginLayout);
@@ -96,13 +114,6 @@ public class Login extends Application {
         primaryStage.setScene(loginScene);
         primaryStage.show();
     }
-    
-    public void openBackgammon(Stage primaryStage, String selectedDifficulty) {
-        Backgammon game = new Backgammon();
-        game.setDifficulty(selectedDifficulty); // Add a setter method to Backgammon
-        game.start(primaryStage);
-    }
-
 
     private boolean validateCredentials(String player1, String player2) {
         // Replace with real authentication logic
@@ -110,6 +121,22 @@ public class Login extends Application {
                player2 != null && !player2.trim().isEmpty();
     }
 
+    // Style method for Labels
+    private void styleLabel(Label label) {
+        label.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.ITALIC, 22));
+        label.setStyle("-fx-text-fill: white; -fx-padding: 5px;");
+    }
+
+    // Style method for TextFields
+    private void styleTextField(TextField textField) {
+        textField.setMaxWidth(300); // Set maximum width explicitly
+        textField.setPrefHeight(30); // Set height explicitly
+        textField.setStyle("-fx-border-color: #4CAF50; " +          // Green border
+                           "-fx-border-radius: 15; " +              // Rounded corners for border
+                           "-fx-background-radius: 15; " +          // Rounded corners for background
+                           "-fx-padding: 5px; " +                   // Padding inside the field
+                           "-fx-font-size: 16px;");                 // Font size
+    }
 
     public static void main(String[] args) {
         launch(args);

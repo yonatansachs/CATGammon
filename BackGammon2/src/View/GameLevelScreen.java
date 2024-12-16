@@ -5,11 +5,13 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
@@ -30,18 +32,19 @@ public class GameLevelScreen extends Application {
 
         // Main layout
         StackPane root = new StackPane();
-        VBox levelLayout = new VBox(20);
+        VBox levelLayout = new VBox(25); // Increased spacing for better aesthetics
         levelLayout.setStyle("-fx-padding: 20; -fx-alignment: center;");
 
         // Title Label
         Label titleLabel = new Label("Select Game Difficulty");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 40));
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 45)); // Larger font for the title
         titleLabel.setStyle("-fx-text-fill: white;");
+        titleLabel.setEffect(new DropShadow(10, Color.BLACK)); // Shadow effect for better contrast
 
         // Difficulty Buttons
-        Button easyButton = createStyledButton("Easy");
-        Button mediumButton = createStyledButton("Medium");
-        Button hardButton = createStyledButton("Hard");
+        Button easyButton = createStyledButton("Easy", "#4CAF50");
+        Button mediumButton = createStyledButton("Medium", "#FFC107");
+        Button hardButton = createStyledButton("Hard", "#F44336");
 
         // Button Actions
         easyButton.setOnAction(event -> startBackgammon(primaryStage, "Easy"));
@@ -49,7 +52,7 @@ public class GameLevelScreen extends Application {
         hardButton.setOnAction(event -> startBackgammon(primaryStage, "Hard"));
 
         // Back Button
-        Button backButton = createStyledButton("Back");
+        Button backButton = createStyledButton("Back", "#607D8B");
         backButton.setOnAction(event -> {
             Login loginScreen = new Login();
             loginScreen.start(primaryStage);
@@ -67,11 +70,24 @@ public class GameLevelScreen extends Application {
     }
 
     /**
-     * Helper method to create styled buttons.
+     * Helper method to create styled buttons with specific colors.
      */
-    private Button createStyledButton(String text) {
+    private Button createStyledButton(String text, String color) {
         Button button = new Button(text);
-        button.setStyle("-fx-font-size: 18; -fx-pref-width: 200; -fx-pref-height: 50;");
+        button.setStyle("-fx-font-size: 20; " +                 // Font size
+                        "-fx-font-weight: bold; " +            // Bold text
+                        "-fx-text-fill: white; " +             // White text
+                        "-fx-background-color: " + color + "; " + // Background color
+                        "-fx-background-radius: 20; " +       // Rounded corners
+                        "-fx-pref-width: 250; " +             // Button width
+                        "-fx-pref-height: 60;");              // Button height
+
+        // Add hover effect
+        button.setOnMouseEntered(e -> button.setStyle(
+                "-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: #333333; -fx-background-radius: 20; -fx-pref-width: 250; -fx-pref-height: 60;"));
+        button.setOnMouseExited(e -> button.setStyle(
+                "-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: " + color + "; -fx-background-radius: 20; -fx-pref-width: 250; -fx-pref-height: 60;"));
+
         return button;
     }
 

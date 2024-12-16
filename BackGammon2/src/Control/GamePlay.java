@@ -33,7 +33,8 @@ public class GamePlay extends Pawns{
     private int[] sevenNum = new int[30];
     private Stage mainStage;
 
-    private int surpriseSpot = -1;
+    //private int surpriseSpot = -1;
+    private int [] surprise = {-1,-1,-1};
 
     public GamePlay(GridPane[] setP, Stage a, String difficulty) {
     	this.difficulty = difficulty;
@@ -56,22 +57,28 @@ public class GamePlay extends Pawns{
         }
 
         // Randomly choose a spot
+        for(int i=0;i<3;i++)
         if (!difficulty.equals("Easy")) {
-            surpriseSpot = selectRandomSpot();
-            System.out.println("Surprise spot selected: " + surpriseSpot);
+            //surpriseSpot = selectRandomSpot();
+        	surprise[i] = selectRandomSpot();
+            System.out.println("Surprise spot selected: " + surprise[i]);
         } else {
-            surpriseSpot = -1;
+            //surpriseSpot = -1;
         }
         
         initializePawns(setP);
     }
     
     private void handleSurpriseSpot(GridPane[] grid, int column) {
-        if (!difficulty.equals("Easy") && column == surpriseSpot) {
-            System.out.println("Surprise spot reached!");
-            QuestionScreen questionScreen = new QuestionScreen();
-            questionScreen.show(mainStage, difficulty);
-        }
+       for(int i=0;i<3;i++)
+       {
+    	   if (!difficulty.equals("Easy") && column == surprise[i]) {
+               System.out.println("Surprise spot reached!");
+               QuestionScreen questionScreen = new QuestionScreen();
+               questionScreen.show(mainStage, difficulty);
+           }
+       }
+    	
     }
 
 
@@ -121,8 +128,8 @@ public class GamePlay extends Pawns{
         return random.nextInt(24); // Randomly choose between 0 and 23
     }
 
-    public int getSurpriseSpot() {
-        return surpriseSpot;
+    public int [] getSurpriseSpot() {
+        return surprise;
     }
 
     
