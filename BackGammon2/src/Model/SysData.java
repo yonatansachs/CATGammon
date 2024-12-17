@@ -26,6 +26,8 @@ public class SysData {
         }
         return instance;
     }
+    
+    
 
     // Load Questions
     private void loadQuestions() {
@@ -36,12 +38,51 @@ public class SysData {
             while ((line = br.readLine()) != null) {
                 jsonContent.append(line.trim());
             }
+            System.out.println(line);
 
             parseQuestions(jsonContent.toString());
         } catch (IOException e) {
             System.err.println("Failed to load questions: " + e.getMessage());
         }
     }
+    
+    
+    /*private void loadQuestions() {
+        questions = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/questions.json")))) {
+            StringBuilder jsonContent = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                jsonContent.append(line);
+            }
+
+            // Parse JSON
+            JSONObject jsonObject = new JSONObject(jsonContent.toString());
+            JSONArray questionsArray = jsonObject.getJSONArray("questions");
+
+            for (int i = 0; i < questionsArray.length(); i++) {
+                JSONObject questionObj = questionsArray.getJSONObject(i);
+
+                String questionText = questionObj.getString("questionText");
+
+                // קריאת התשובות מה-JSON
+                JSONArray optionsArray = questionObj.getJSONArray("options");
+                String[] options = new String[optionsArray.length()];
+                for (int j = 0; j < optionsArray.length(); j++) {
+                    options[j] = optionsArray.getString(j);
+                }
+
+                int correctAnswerIndex = questionObj.getInt("correctAnswerIndex");
+                String difficulty = questionObj.getString("difficulty");
+
+                // יצירת אובייקט Question והוספה לרשימה
+                questions.add(new Question(questionText, options, correctAnswerIndex, difficulty));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
+
 
     private void parseQuestions(String json) {
         json = json.substring(1, json.length() - 1);
@@ -68,9 +109,12 @@ public class SysData {
                         questionText = value;
                         break;
                     case "options":
-                        value = value.substring(1, value.length() - 1);
-                        options = value.split(",");
-                        break;
+                    	 value = value.substring(1, value.length() - 1); // Remove brackets
+                    	 options = value.split("\",\""); // Split options correctly
+                    	 for (int j = 0; j < options.length; j++) {
+                    		 options[j] = options[j].replace("\"", "").trim(); // Remove extra quotes
+                    	 }
+                    	 break;
                     case "correctAnswerIndex":
                         correctAnswerIndex = Integer.parseInt(value);
                         break;
@@ -174,8 +218,18 @@ public class SysData {
     }
 
 
-
     public Question getRandomQuestion(String difficulty) {
+    	List<Question> filteredQuestions = new ArrayList<>();
+        for (Question q : questions) {
+            if (q.getDifficulty().equalsIgnoreCase(difficulty)) {
+                filteredQuestions.add(q);
+            }
+        }
+        Random random = new Random();
+        return questions.isEmpty() ? null : questions.get(random.nextInt(questions.size()));
+    }
+    
+ /*   public Question getRandomQuestion(String difficulty) {
         List<Question> filteredQuestions = new ArrayList<>();
         for (Question q : questions) {
             if (q.getDifficulty().equalsIgnoreCase(difficulty)) {
@@ -187,5 +241,5 @@ public class SysData {
 
         Random random = new Random();
         return filteredQuestions.get(random.nextInt(filteredQuestions.size()));
-    }
+    }*/
 }
