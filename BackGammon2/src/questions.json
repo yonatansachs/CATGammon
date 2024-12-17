@@ -1,29 +1,202 @@
-[
-  {
-    "questionText": "What is software engineering?",
-    "options": ["A type of hardware maintenance.",
-                "The application of engineering principles to software development.",
-                "Writing scripts for websites.",
-                "Designing computer hardware."],
-    "correctAnswerIndex": 1,
-    "difficulty": "Easy"
-  },
-  {
-    "questionText": "What is software quality assurance (SQA)?",
-    "options": ["A method to ensure software works as expected.",
-                "Writing code for software.",
-                "Designing user interfaces.",
-                "Testing computer hardware."],
-    "correctAnswerIndex": 0,
-    "difficulty": "Medium"
-  },
-  {
-    "questionText": "Explain the concept of test automation and its advantages over manual testing.",
-    "options": ["Test automation replaces software engineers.",
-                "Test automation is faster, more reliable, and reduces repetitive tasks.",
-                "Test automation is slower than manual testing.",
-                "Test automation is used only in debugging."],
-    "correctAnswerIndex": 1,
-    "difficulty": "Hard"
-  }
-]
+{
+  "questions": [
+    {
+      "questionText": "What is software engineering?",
+      "options": [
+        "A type of hardware maintenance.",
+        "The application of engineering principles to software development.",
+        "Writing scripts for websites.",
+        "Designing computer hardware."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "Name one goal of software engineering.",
+      "options": [
+        "To create software with minimal effort.",
+        "To develop high-quality software efficiently.",
+        "To eliminate the need for hardware.",
+        "To automate all human tasks."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "What is software quality assurance (SQA)?",
+      "options": [
+        "A method to ensure software works as expected.",
+        "Writing code for software.",
+        "Designing user interfaces.",
+        "Testing computer hardware."
+      ],
+      "correctAnswerIndex": 0,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "What is the purpose of software testing?",
+      "options": [
+        "To identify and fix defects in software.",
+        "To upgrade computer hardware.",
+        "To design software architecture.",
+        "To write new code for applications."
+      ],
+      "correctAnswerIndex": 0,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "Define the term 'bug' in software development.",
+      "options": [
+        "An error in hardware.",
+        "An error or flaw in software.",
+        "A tool for debugging code.",
+        "A type of computer virus."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "What does SDLC stand for?",
+      "options": [
+        "Software Deployment and Lifecycle.",
+        "Software Development Lifecycle.",
+        "System Development Lifecycle.",
+        "Software Debugging and Coding."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "Name one phase of the software development lifecycle (SDLC).",
+      "options": [
+        "Requirement gathering.",
+        "Hardware maintenance.",
+        "Circuit testing.",
+        "Network configuration."
+      ],
+      "correctAnswerIndex": 0,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "What is the primary responsibility of a software engineer?",
+      "options": [
+        "To repair computer hardware.",
+        "To design and develop software.",
+        "To manage databases.",
+        "To configure networks."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "What is the difference between functional and non-functional requirements?",
+      "options": [
+        "Functional relates to appearance, non-functional relates to cost.",
+        "Functional defines what software should do, non-functional defines how it should behave.",
+        "Functional focuses on coding, non-functional on debugging.",
+        "Functional is for engineers, non-functional is for users."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "What is version control in software engineering?",
+      "options": [
+        "A method to update computer hardware.",
+        "A system to track changes to code over time.",
+        "A process to remove bugs.",
+        "A tool to improve software performance."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Easy"
+    },
+    {
+      "questionText": "Explain the importance of requirement analysis in software engineering.",
+      "options": [
+        "It helps identify user needs and system constraints.",
+        "It focuses on testing software.",
+        "It determines hardware requirements.",
+        "It improves the system’s performance."
+      ],
+      "correctAnswerIndex": 0,
+      "difficulty": "Medium"
+    },
+    {
+      "questionText": "What is the difference between black-box and white-box testing?",
+      "options": [
+        "Black-box tests the UI, white-box tests the backend.",
+        "Black-box tests internal code; white-box tests external interfaces.",
+        "Black-box focuses on inputs/outputs without code knowledge; white-box requires code knowledge.",
+        "Black-box is manual; white-box is automated."
+      ],
+      "correctAnswerIndex": 2,
+      "difficulty": "Medium"
+    },
+    {
+      "questionText": "Name two software development methodologies and explain their differences.",
+      "options": [
+        "Waterfall focuses on sequential steps, Agile focuses on iterative development.",
+        "Waterfall is hardware-based, Agile is software-based.",
+        "Both are used only in testing phases.",
+        "Both are outdated methodologies."
+      ],
+      "correctAnswerIndex": 0,
+      "difficulty": "Medium"
+    },
+    {
+      "questionText": "What is regression testing, and why is it necessary?",
+      "options": [
+        "It checks hardware updates.",
+        "It tests new functionality in software.",
+        "It ensures changes haven’t broken existing functionality.",
+        "It verifies the user interface."
+      ],
+      "correctAnswerIndex": 2,
+      "difficulty": "Medium"
+    },
+    {
+      "questionText": "Define 'agile software development.'",
+      "options": [
+        "A rigid approach to software development.",
+        "A hardware-oriented development process.",
+        "A flexible and iterative approach to software development.",
+        "A method for debugging code."
+      ],
+      "correctAnswerIndex": 2,
+      "difficulty": "Medium"
+    },
+    {
+      "questionText": "Explain the concept of test automation and its advantages over manual testing.",
+      "options": [
+        "Test automation replaces software engineers.",
+        "Test automation is faster, more reliable, and reduces repetitive tasks.",
+        "Test automation is slower than manual testing.",
+        "Test automation is used only in debugging."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Hard"
+    },
+    {
+      "questionText": "Explain the importance of the 'V-model' in software development.",
+      "options": [
+        "It eliminates the need for testing.",
+        "It links each development phase to its corresponding testing phase.",
+        "It focuses only on debugging.",
+        "It is an outdated methodology."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Hard"
+    },
+    {
+      "questionText": "What are some key metrics used to measure software quality?",
+      "options": [
+        "Lines of code and debugging time.",
+        "Defect density, mean time to failure, and customer satisfaction.",
+        "Number of testers and development time.",
+        "System specifications and hardware requirements."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Hard"
+    }
+  ]
+}

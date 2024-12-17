@@ -20,10 +20,12 @@ import Control.GamePlay;
 import Model.Pawns;
 import View.Firstlayer;
 import View.SecondLayer;
+import View.WhoStarts;
 
 public class Backgammon extends Application {
 
     private String difficulty;
+    private String startingPlayer;
 
     @Override
     public void start(Stage primaryStage) {
@@ -47,7 +49,16 @@ public class Backgammon extends Application {
         }
 
         GamePlay theGame = new GamePlay(gridCols, primaryStage, difficulty);
+        
+        WhoStarts whoStartsScreen = new WhoStarts();
+        startingPlayer = whoStartsScreen.determineStartingPlayer(primaryStage);
 
+        // Step 2: Proceed to the game with the determined starting player
+        System.out.println("Starting Player: " + startingPlayer);
+
+        // Initialize the game board with the starting player
+        initializeGame(primaryStage, startingPlayer);
+        
         //-------------------BUTTON AND LABEL-------------------------------------
         Button dices = new Button("Roll Dice 🎲");
         dices.setLayoutX(10); // Positioned at the left edge
@@ -131,6 +142,15 @@ public class Backgammon extends Application {
         primaryStage.setMinWidth(1100);
         primaryStage.setResizable(false);
 
+        primaryStage.show();
+    }
+    
+    private void initializeGame(Stage primaryStage, String startingPlayer) {
+        // Your existing game initialization logic here
+        System.out.println("Initializing game with starting player: " + startingPlayer);
+
+        // Placeholder for game setup
+        primaryStage.setTitle("Backgammon - Player " + startingPlayer + " starts!");
         primaryStage.show();
     }
 
