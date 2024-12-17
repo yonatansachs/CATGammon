@@ -113,6 +113,23 @@ public class Login extends Application {
         primaryStage.setTitle("Login");
         primaryStage.setScene(loginScene);
         primaryStage.show();
+        
+        
+     // Instructions Button
+        Button instructionsButton = new Button("Instructions");
+        instructionsButton.setStyle(buttonStyle);
+        instructionsButton.setOnMouseEntered(e -> instructionsButton.setStyle(buttonStyle + hoverStyle));
+        instructionsButton.setOnMouseExited(e -> instructionsButton.setStyle(buttonStyle));
+
+        // Button Action: Open the Instructions Screen
+        instructionsButton.setOnAction(event -> {
+            BackgammonInstructions instructionsScreen = new BackgammonInstructions();
+            instructionsScreen.start(primaryStage); // Navigate to the Instructions screen
+        });
+
+        // Add the Instructions Button to the VBox layout
+        loginLayout.getChildren().addAll(instructionsButton);
+
     }
 
     private boolean validateCredentials(String player1, String player2) {
@@ -137,6 +154,9 @@ public class Login extends Application {
                            "-fx-padding: 5px; " +                   // Padding inside the field
                            "-fx-font-size: 16px;");                 // Font size
     }
+    
+    
+    
 
     public static void main(String[] args) {
         launch(args);
