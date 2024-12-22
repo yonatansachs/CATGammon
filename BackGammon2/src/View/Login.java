@@ -18,6 +18,8 @@ import javafx.stage.Stage;
 
 public class Login extends Application {
 
+	public static String player1 = "";
+	public static String player2 = "";
     @Override
     public void start(Stage primaryStage) {
         // Create a StackPane for the layout to layer the background and login content
@@ -75,8 +77,9 @@ public class Login extends Application {
         loginButton.setOnMouseExited(e -> loginButton.setStyle(buttonStyle));
 
         loginButton.setOnAction(event -> {
-            String player1 = player1Field.getText();
-            String player2 = player2Field.getText();
+            player1 = player1Field.getText();
+            player2 = player2Field.getText();
+            
 
             if (validateCredentials(player1, player2)) {
                 // Transition to Game Level Selection screen
