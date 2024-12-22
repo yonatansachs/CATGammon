@@ -129,6 +129,7 @@ public class Backgammon extends Application {
                 }
             }
         });
+        placeQuestionMarks(gridCols,pane);
 
         //-------------------SCENE AND STAGE-------------------------------------
         pane.getChildren().addAll(dices, one, two);
@@ -144,7 +145,39 @@ public class Backgammon extends Application {
 
         primaryStage.show();
     }
-    
+    private final SecondLayer secondLayer = new SecondLayer();
+
+    int[] surprise = GamePlay.getSurprise();
+    public void placeQuestionMarks(GridPane[] gridCols, Pane parentPane) {
+        for (int i = 0; i < surprise.length; i++) {
+            if (surprise[i] != -1) {
+                // Create a question mark label
+                Label questionMark = new Label("?");
+                questionMark.setFont(Font.font(null, FontWeight.BOLD, 72));
+                questionMark.setStyle("-fx-text-fill: purple;");
+
+                // Determine layout based on the column and row
+                int gridIndex = surprise[i];
+                double layoutX = secondLayer.cols[gridIndex];
+                double layoutY;
+
+                if (gridIndex < 12) {
+                    layoutY = 10; // Top row
+                } else {
+                    layoutY = 630; // Bottom row 
+                }
+
+                // Explicitly set the layout
+                questionMark.setLayoutX(layoutX);
+                questionMark.setLayoutY(layoutY);
+
+                // Add the label to the parent Pane
+                parentPane.getChildren().add(questionMark);
+            }
+        }
+    }
+
+
     private void initializeGame(Stage primaryStage, String startingPlayer) {
         // Your existing game initialization logic here
         System.out.println("Initializing game with starting player: " + startingPlayer);

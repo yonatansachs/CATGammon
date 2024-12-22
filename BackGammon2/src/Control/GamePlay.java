@@ -1,6 +1,11 @@
 package Control;
 
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
+
+import javax.swing.text.Element;
+import javafx.scene.image.ImageView;
 
 import Model.Pawns;
 import View.QuestionScreen;
@@ -12,10 +17,12 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
+import javafx.scene.image.Image;
+import javafx.scene.layout.GridPane;
+
 
 public class GamePlay extends Pawns{
     
@@ -34,7 +41,7 @@ public class GamePlay extends Pawns{
     private Stage mainStage;
 
     //private int surpriseSpot = -1;
-    private int [] surprise = {-1,-1,-1};
+    public static int [] surprise = {-1,-1,-1};
 
     public GamePlay(GridPane[] setP, Stage a, String difficulty) {
     	this.difficulty = difficulty;
@@ -55,13 +62,18 @@ public class GamePlay extends Pawns{
         for (int i = 0; i < blackDown.length; i++) {
             blackDown[i] = 0;
         }
-
+        Set<Integer> usedPositions = new HashSet<>(); // Track already used positions
         // Randomly choose a spot
         for(int i=0;i<3;i++)
         if (!difficulty.equals("Easy")) {
-            //surpriseSpot = selectRandomSpot();
+        	//surpriseSpot = selectRandomSpot();
         	surprise[i] = selectRandomSpot();
+        	while(usedPositions.contains(surprise[i]))
+        		surprise[i] = selectRandomSpot();
+        	usedPositions.add(surprise[i]);
+        	
             System.out.println("Surprise spot selected: " + surprise[i]);
+
         } else {
             //surpriseSpot = -1;
         }
@@ -69,7 +81,15 @@ public class GamePlay extends Pawns{
         initializePawns(setP);
     }
     
-    private void handleSurpriseSpot(GridPane[] grid, int column) {
+    public static int[] getSurprise() {
+		return surprise;
+	}
+
+	public void setSurprise(int[] surprise) {
+		this.surprise = surprise;
+	}
+
+	private void handleSurpriseSpot(GridPane[] grid, int column) {
        for(int i=0;i<3;i++)
        {
     	   if (!difficulty.equals("Easy") && column == surprise[i]) {
@@ -857,11 +877,12 @@ public class GamePlay extends Pawns{
         for(int gg=0; gg<24; gg++){        
         if((gg+dOne<24) && (gg+dTwo<24) ){    
         final int l=gg;        
-        if (blue[gg]!=0 &&
+       if (blue[gg]!=0 &&
         		((gg+dOne>=0 && gg+dOne <24 &&
         		(oneBlack[gg+dOne] == 1|| empty[gg+dOne] == 1|| blue[gg+dOne]!=0)) ||
         		(gg +dTwo >=0 && gg+dTwo<24 &&
         		(oneBlack[gg+dTwo] == 1|| empty[gg+dTwo] == 1 || blue[gg+dTwo] !=0))))
+        
         		{
         	
             grid[gg].setStyle("-fx-border-color:pink;");
