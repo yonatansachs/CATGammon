@@ -17,9 +17,9 @@ import java.util.Random;
 public class WhoStarts {
 
     private final Random random = new Random();
-    private String startingPlayer;
+    public static boolean startingPlayer;
 
-    public String determineStartingPlayer(Stage owner) {
+    public boolean determineStartingPlayer(Stage owner) {
         Stage whoStartsStage = new Stage();
         whoStartsStage.initOwner(owner);
         whoStartsStage.initModality(Modality.APPLICATION_MODAL);
@@ -57,14 +57,16 @@ public class WhoStarts {
                 player2Roll = random.nextInt(6) + 1;
 
                 // Update result label to show dice rolls
-                String resultMessage = String.format("Player 1 rolled: %d\nPlayer 2 rolled: %d\n", player1Roll, player2Roll);
-
+                String player1 = Login.player1;
+                String player2 = Login.player2;
+                String resultMessage = String.format(player1 + " rolled: %d\n" + player2 +" rolled: %d\n", player1Roll, player2Roll);
+               
                 if (player1Roll > player2Roll) {
-                    resultMessage += "Player 1 starts!";
-                    startingPlayer = "1";
+                    resultMessage += player1 + " starts!";
+                    startingPlayer = true;
                 } else if (player2Roll > player1Roll) {
-                    resultMessage += "Player 2 starts!";
-                    startingPlayer = "2";
+                    resultMessage += player2 + " starts!";
+                    startingPlayer = false;
                 } else {
                     resultMessage += "It's a tie! Roll again.";
                 }

@@ -19,13 +19,14 @@ import javafx.stage.Stage;
 import Control.GamePlay;
 import Model.Pawns;
 import View.Firstlayer;
+import View.Login;
 import View.SecondLayer;
 import View.WhoStarts;
 
 public class Backgammon extends Application {
 
     private String difficulty;
-    private String startingPlayer;
+    private boolean startingPlayer;
 
     @Override
     public void start(Stage primaryStage) {
@@ -52,12 +53,21 @@ public class Backgammon extends Application {
         
         WhoStarts whoStartsScreen = new WhoStarts();
         startingPlayer = whoStartsScreen.determineStartingPlayer(primaryStage);
-
+        String startingPlayerName =" ";
+        if(startingPlayer)
+        {
+        	startingPlayerName = Login.player1;
+        }
+        	
+        else
+        	startingPlayerName = Login.player2;
+        
         // Step 2: Proceed to the game with the determined starting player
-        System.out.println("Starting Player: " + startingPlayer);
+        System.out.println("Starting Player: " + startingPlayerName);
 
         // Initialize the game board with the starting player
-        initializeGame(primaryStage, startingPlayer);
+        
+        initializeGame(primaryStage, startingPlayerName);
         
         //-------------------BUTTON AND LABEL-------------------------------------
         Button dices = new Button("Roll Dice 🎲");
@@ -101,7 +111,7 @@ public class Backgammon extends Application {
         two.setStyle("-fx-text-fill: white;");
 
         dices.setOnAction(new EventHandler<ActionEvent>() {
-            boolean player = true;
+           // boolean player = false;
 
             @Override
             public void handle(ActionEvent event) {
@@ -113,22 +123,26 @@ public class Backgammon extends Application {
 
                 one.setText(String.valueOf(diceOne));
                 two.setText(String.valueOf(diceTwo));
-
-                if (player) {
+                String player1 = Login.player1;
+                String player2 = Login.player2;
+                if (startingPlayer) {
                     if (diceOne == diceTwo) theGame.setTimes(4);
-                    player = false;
-                    dices.setText("Black's Turn 🎲");
+                    startingPlayer = false;
+                    dices.setText(player2 +"'s Turn 🎲");
                     theGame.reset();
                     theGame.bluePlays(gridCols, diceOne, diceTwo);
                 } else {
                     if (diceOne == diceTwo) theGame.setTimes(4);
-                    player = true;
-                    dices.setText("Blue's Turn 🎲");
+                    startingPlayer = true;
+                    dices.setText(player1 + "'s Turn 🎲");
                     theGame.reset();
                     theGame.blackPlays(gridCols, diceOne, diceTwo);
                 }
             }
         });
+        placeQuestionMarks(gridCols,pane);
+        if(GamePlay.difficulty.equals("Hard"))
+        	placeSurprise(gridCols,pane);
 
         //-------------------SCENE AND STAGE-------------------------------------
         pane.getChildren().addAll(dices, one, two);
@@ -144,7 +158,61 @@ public class Backgammon extends Application {
 
         primaryStage.show();
     }
-    
+    private void placeSurprise(GridPane[] gridCols, Pane parentPane) {
+    	Label surprise = new Label("🎁");
+    	surprise.setFont(Font.font(null, FontWeight.BOLD, 60));
+    	surprise.setStyle("-fx-text-fill: purple;");
+    	 int gridIndex =GamePlay.surprise;
+         double layoutX = secondLayer.cols[gridIndex];
+         double layoutY;
+
+         if (gridIndex < 12) {
+             layoutY = 10; // Top row
+         } else {
+             layoutY = 630; // Bottom row 
+         }
+
+         // Explicitly set the layout
+         surprise.setLayoutX(layoutX);
+         surprise.setLayoutY(layoutY);
+
+         // Add the label to the parent Pane
+         parentPane.getChildren().add(surprise);
+		
+	}
+	private final SecondLayer secondLayer = new SecondLayer();
+
+    int[] questions = GamePlay.getQuestions();
+    public void placeQuestionMarks(GridPane[] gridCols, Pane parentPane) {
+        for (int i = 0; i < questions.length; i++) {
+            if (questions[i] != -1) {
+                // Create a question mark label
+                Label questionMark = new Label("?");
+                questionMark.setFont(Font.font(null, FontWeight.BOLD, 72));
+                questionMark.setStyle("-fx-text-fill: purple;");
+
+                // Determine layout based on the column and row
+                int gridIndex = questions[i];
+                double layoutX = secondLayer.cols[gridIndex];
+                double layoutY;
+
+                if (gridIndex < 12) {
+                    layoutY = 10; // Top row
+                } else {
+                    layoutY = 630; // Bottom row 
+                }
+
+                // Explicitly set the layout
+                questionMark.setLayoutX(layoutX);
+                questionMark.setLayoutY(layoutY);
+
+                // Add the label to the parent Pane
+                parentPane.getChildren().add(questionMark);
+            }
+        }
+    }
+
+
     private void initializeGame(Stage primaryStage, String startingPlayer) {
         // Your existing game initialization logic here
         System.out.println("Initializing game with starting player: " + startingPlayer);
