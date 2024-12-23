@@ -7,6 +7,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -17,11 +18,12 @@ import javafx.stage.Stage;
 
 public class QuestionScreen {
 
-    private final SysData sysData = SysData.getInstance();
+    private final SysData sysData = SysData.getInstance(); // Singleton SysData
 
-    public void show(Stage owner, String difficulty) {
-        // Fetch a random question based on difficulty
+    /*public void show(Stage owner, String difficulty) {
+        // Fetch a random question based on the given difficulty
         Question randomQuestion = sysData.getRandomQuestion(difficulty);
+
         if (randomQuestion == null) {
             showError("No questions available for the selected difficulty.");
             return;
@@ -34,56 +36,130 @@ public class QuestionScreen {
         // Background Image with GaussianBlur
         Image backgroundImage = new Image(getClass().getResourceAsStream("backgammon2.png"));
         ImageView backgroundImageView = new ImageView(backgroundImage);
-        backgroundImageView.setFitWidth(400); // Adjust to fit the scene
+        backgroundImageView.setFitWidth(400); 
         backgroundImageView.setFitHeight(300);
         backgroundImageView.setPreserveRatio(false);
         backgroundImageView.setEffect(new GaussianBlur(50));
 
-        // Create the UI components
+        // Question Label
         Label questionLabel = new Label(randomQuestion.getQuestionText());
         questionLabel.setStyle("-fx-font-size: 16px; -fx-wrap-text: true; -fx-text-fill: white;");
-        questionLabel.setAlignment(Pos.CENTER);
         questionLabel.setWrapText(true);
+        questionLabel.setAlignment(Pos.CENTER);
 
-        VBox optionsBox = new VBox(10);
-        optionsBox.setAlignment(Pos.CENTER);
+        // Options Buttons
+        VBox optionsBox = new VBox(10); // Vertical box with spacing
+        optionsBox.setAlignment(Pos.CENTER); // Center align
+        optionsBox.setStyle("-fx-background-color: rgba(0,0,0,0.6); -fx-padding: 10;");
 
-        // Buttons for the answer options
+        // Adding buttons
         String[] options = randomQuestion.getOptions();
-        Button[] optionButtons = new Button[options.length];
-
         for (int i = 0; i < options.length; i++) {
-            optionButtons[i] = new Button(options[i]);
-            optionButtons[i].setStyle("-fx-font-size: 14px; -fx-pref-width: 250;");
-            int selectedOption = i; // Capture the current index for the lambda
+            Button optionButton = new Button(options[i]);
+            optionButton.setStyle("-fx-font-size: 14px; -fx-pref-width: 250; -fx-wrap-text: true;");
+            optionButton.setWrapText(true); // Allow text wrapping for long answers
 
-            optionButtons[i].setOnAction(event -> {
+            // Lambda to check answer
+            int selectedOption = i;
+            optionButton.setOnAction(event -> {
                 if (selectedOption == randomQuestion.getCorrectAnswerIndex()) {
                     showCorrectMessage(questionStage);
                 } else {
                     showWrongMessage();
                 }
             });
+
+            optionsBox.getChildren().add(optionButton); // Add button to VBox
         }
 
-        optionsBox.getChildren().addAll(optionButtons);
 
         // Layout
         VBox rootLayout = new VBox(20, questionLabel, optionsBox);
         rootLayout.setAlignment(Pos.CENTER);
 
-        // StackPane to layer the background and content
         StackPane root = new StackPane();
         root.getChildren().addAll(backgroundImageView, rootLayout);
         root.setStyle("-fx-padding: 20;");
 
-        // Scene
-        Scene scene = new Scene(root, 400, 300);
+        Scene scene = new Scene(root, 800, 590);
+        questionStage.setTitle("Answer the Question");
+        questionStage.setScene(scene);
+        questionStage.showAndWait();
+    }*/
+    
+    public void show(Stage owner, String difficulty) {
+        // Fetch a random question based on the given difficulty
+        Question randomQuestion = sysData.getRandomQuestion(difficulty);
+
+        if (randomQuestion == null) {
+            showError("No questions available for the selected difficulty.");
+            return;
+        }
+
+        Stage questionStage = new Stage();
+        questionStage.initOwner(owner);
+        questionStage.initModality(Modality.APPLICATION_MODAL);
+
+        // Background Image with GaussianBlur
+        Image backgroundImage = new Image(getClass().getResourceAsStream("backgammon2.png"));
+        ImageView backgroundImageView = new ImageView(backgroundImage);
+        backgroundImageView.setFitWidth(800); // Match the scene width
+        backgroundImageView.setFitHeight(590); // Match the scene height
+        backgroundImageView.setPreserveRatio(false);
+        backgroundImageView.setEffect(new GaussianBlur(50));
+
+        // Question Label
+        Label questionLabel = new Label(randomQuestion.getQuestionText());
+        questionLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: white; -fx-font-weight: bold;");
+        questionLabel.setWrapText(true);
+        questionLabel.setAlignment(Pos.CENTER);
+
+        // Options Buttons
+        VBox optionsBox = new VBox(15); // Increased spacing between buttons
+        optionsBox.setAlignment(Pos.CENTER);
+        optionsBox.setStyle("-fx-background-color: rgba(0,0,0,0.6); -fx-padding: 20; -fx-border-radius: 10;");
+
+        // Adding buttons dynamically
+        String[] options = randomQuestion.getOptions();
+        for (int i = 0; i < options.length; i++) {
+            Button optionButton = new Button(options[i]);
+            optionButton.setStyle("-fx-font-size: 14px; -fx-pref-width: 300; -fx-wrap-text: true;");
+            optionButton.setWrapText(true); // Allow text wrapping for long answers
+
+            // Check answer on button click
+            int selectedOption = i;
+            optionButton.setOnAction(event -> {
+                if (selectedOption == randomQuestion.getCorrectAnswerIndex()) {
+                    showCorrectMessage(questionStage);
+                } else {
+                    showWrongMessage();
+                }
+            });
+
+            optionsBox.getChildren().add(optionButton); // Add button to VBox
+        }
+
+        // Add ScrollPane in case options exceed visible space
+        ScrollPane scrollPane = new ScrollPane(optionsBox);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-padding: 0;");
+
+        // Layout
+        VBox rootLayout = new VBox(20, questionLabel, scrollPane);
+        rootLayout.setAlignment(Pos.CENTER);
+        rootLayout.setStyle("-fx-background-color: transparent; -fx-padding: 20;");
+
+        StackPane root = new StackPane();
+        root.getChildren().addAll(backgroundImageView, rootLayout);
+
+        Scene scene = new Scene(root, 800, 590);
         questionStage.setTitle("Answer the Question");
         questionStage.setScene(scene);
         questionStage.showAndWait();
     }
+    
 
+    // Display a success message
     private void showCorrectMessage(Stage stage) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Correct!");
@@ -93,6 +169,7 @@ public class QuestionScreen {
         stage.close();
     }
 
+    // Display a failure message
     private void showWrongMessage() {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle("Wrong!");
@@ -101,6 +178,7 @@ public class QuestionScreen {
         alert.showAndWait();
     }
 
+    // Display an error message
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
