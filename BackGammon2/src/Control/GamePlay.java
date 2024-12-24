@@ -902,7 +902,7 @@ public class GamePlay extends Pawns{
         else{
             
         for(int gg=0; gg<24; gg++){        
-        if((gg+dOne<24) && (gg+dTwo<24) ){    
+        if((gg+dOne<24) || (gg+dTwo<24) ){    
         final int l=gg;        
        if (blue[gg]!=0 &&
         		((gg+dOne>=0 && gg+dOne <24 &&
