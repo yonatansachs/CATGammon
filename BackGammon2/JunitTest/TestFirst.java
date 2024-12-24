@@ -1,23 +1,51 @@
 import static org.junit.Assert.*;
-import static org.junit.Assert.*;
 import org.junit.Before;
-import org.junit.Test;
 import Control.GamePlay;
 import Model.SysData;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import static org.junit.Assert.assertNotNull;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestFirst {
 
+    //Basic check that SysData ok - get SysData class
+	private static SysData check;
+
+    @BeforeClass
+    public static void setUpClass() throws InterruptedException {
+        // Initialize JavaFX Toolkit
+        new JFXPanel(); // Ensures JavaFX platform initializes
+        // Run on JavaFX Thread
+        Platform.runLater(() -> check = SysData.getInstance());
+        Stage stage = new Stage();
+        // Wait for JavaFX Thread to complete
+        Thread.sleep(1000);
+    }
+
+    @Test
+    public void testSysData() {
+        assertNotNull("SysData instance should not be null", check);
+    }
+
+
+    /*SysData check = SysData.getInstance();
+    @Test
+    public void testSysData() {
+    	assertNotNull(check);
+    }*/
+    
+    //need to fill this test
 	@Test
 	public void validRollDice() {
-		
 		fail("Not yet implemented");
 	}
 	
+    //need to fill this test
 	public void validPlayerNames() {
-		
 		fail("Not yet implemented");
 	}
 	
@@ -33,7 +61,6 @@ public class TestFirst {
 	        for (int i = 0; i < 24; i++) {
 	            gridPanes[i] = new GridPane();
 	        }
-
 	        gamePlay = new GamePlay(gridPanes, stage, "Medium");
 	    }
 
@@ -103,13 +130,6 @@ public class TestFirst {
 	        gamePlay.setUp(gridPanes, 15, 2, true);
 	        int count = gamePlay.howManyContains(gridPanes, 15);
 	        assertEquals("Column 15 should have 2 pawns", 2, count);
-	    }
-	    
-	    //Basic check that it is ok - get SysData class
-	    SysData check = SysData.getInstance();
-	    @Test
-	    public void testSysData() {
-	    	assertNotNull(check);
 	    }
 	    
 	    
