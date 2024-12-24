@@ -89,7 +89,7 @@ public class QuestionScreen {
     
     public void show(Stage owner, String difficulty) {
         // Fetch a random question based on the given difficulty
-        Question randomQuestion = sysData.getRandomQuestion(difficulty);
+        Question randomQuestion = sysData.getRandomQuestion(QuestionLevel.questionDifficulty2);
 
         if (randomQuestion == null) {
             showError("No questions available for the selected difficulty.");

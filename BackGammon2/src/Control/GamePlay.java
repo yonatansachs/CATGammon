@@ -8,6 +8,7 @@ import javax.swing.text.Element;
 import javafx.scene.image.ImageView;
 
 import Model.Pawns;
+import View.QuestionLevel;
 import View.QuestionScreen;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -38,7 +39,7 @@ public class GamePlay extends Pawns{
     private int times = 2;
     private int countDice = 1;
     private int[] sevenNum = new int[30];
-    private Stage mainStage;
+    public static Stage mainStage;
     
 
     //private int surpriseSpot = -1;
@@ -101,12 +102,31 @@ public class GamePlay extends Pawns{
 	}
 
 	private void handleQuestionSpot(GridPane[] grid, int column) {
-       for(int i=0;i<3;i++)
+		Random rand = new Random();
+       
+		for(int i=0;i<3;i++)
        {
     	   if (!difficulty.equals("Easy") && column == questions[i]) {
                System.out.println("Question spot reached!");
-               QuestionScreen questionScreen = new QuestionScreen();
-               questionScreen.show(mainStage, difficulty);
+               int num = rand.nextInt(3)+1;
+               System.out.println(num);
+               String questiondifficulty ="";
+               switch(num)
+               {
+               case 1:
+            	   questiondifficulty = "Easy"; 
+            	   break;
+               case 2:
+            	   questiondifficulty = "Medium";
+            	   break;
+               case 3:
+            	   questiondifficulty = "Hard";
+            	   break;
+               default : break;
+               }
+               
+               QuestionLevel questionLevel = new QuestionLevel();
+               questionLevel.show(mainStage, questiondifficulty);
            }
        }
     	
