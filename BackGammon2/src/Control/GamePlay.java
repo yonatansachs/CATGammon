@@ -107,9 +107,7 @@ public class GamePlay extends Pawns{
 		for(int i=0;i<3;i++)
        {
     	   if (!difficulty.equals("Easy") && column == questions[i]) {
-               System.out.println("Question spot reached!");
                int num = rand.nextInt(3)+1;
-               System.out.println(num);
                String questiondifficulty ="";
                switch(num)
                {
