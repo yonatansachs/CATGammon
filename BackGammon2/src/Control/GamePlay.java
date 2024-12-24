@@ -23,8 +23,8 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
-
-
+import application.Backgammon;
+import View.SurprisePopUp;
 public class GamePlay extends Pawns{
     
 	public static String difficulty;
@@ -40,12 +40,12 @@ public class GamePlay extends Pawns{
     private int countDice = 1;
     private int[] sevenNum = new int[30];
     public static Stage mainStage;
-    
+    private int counter =0;
 
     //private int surpriseSpot = -1;
     public static int [] questions = {-1,-1,-1};
     public static int surprise =-1;
-    private boolean surprisePlayed =false;
+    public static boolean surprisePlayed =false;
 
     public GamePlay(GridPane[] setP, Stage a, String difficulty) {
     	this.difficulty = difficulty;
@@ -86,14 +86,25 @@ public class GamePlay extends Pawns{
         	  while(usedPositions.contains(surprise))
         	  {
         		  surprise = selectRandomSpot();
+        		  
+        		  
         	  }
+        	  
           }
         
         
         initializePawns(setP);
     }
     
-    public static int[] getQuestions() {
+    private void handleSurpriseSpot(GridPane[] grid, int column) {
+    	if(column == surprise)
+    	{
+    		surprisePlayed = true;
+    	}
+		
+	}
+
+	public static int[] getQuestions() {
 		return questions;
 	}
 
@@ -525,6 +536,7 @@ public class GamePlay extends Pawns{
 
         // Checking if the pawn reached the spot
         handleQuestionSpot(grid, column + dice);
+        handleSurpriseSpot(grid,column+dice);
         
         //check if pawn reached surprise spot
     }
@@ -624,7 +636,16 @@ public class GamePlay extends Pawns{
     }
     }
     public void bluePlays(GridPane[] grid,int dOne,int dTwo){
-      
+    	
+		if(surprisePlayed&&counter==0)
+        {
+			SurprisePopUp popup = new SurprisePopUp();
+    		popup.show(mainStage); // Replace 'primaryStage' with your main stage variable.
+
+        	Backgammon.startingPlayer = true;
+        	counter++;
+        	
+        }
         int[] blue=new int[30];
         int[] oneBlack= new int[30];
         int[] empty=new int[30];
@@ -950,7 +971,15 @@ public class GamePlay extends Pawns{
 
     public void blackPlays(GridPane[] grid,int dOne,int dTwo){
     
-        
+    	if(surprisePlayed&&counter==0)
+        {
+    		SurprisePopUp popup = new SurprisePopUp();
+    		popup.show(mainStage); // Replace 'primaryStage' with your main stage variable.
+
+    		Backgammon.startingPlayer = false;
+        	counter++;
+        	
+        }
         int[] black=new int[30];
         int[] oneBlue= new int[30];
         int[] empty=new int[30];
@@ -1358,6 +1387,8 @@ public class GamePlay extends Pawns{
 
         // Checking if the pawn reached the spot
         handleQuestionSpot(grid, column - dice);
+        handleSurpriseSpot(grid,column-dice);
+
     }
 
         

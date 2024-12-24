@@ -26,7 +26,10 @@ import View.WhoStarts;
 public class Backgammon extends Application {
 
     private String difficulty;
-    private boolean startingPlayer;
+    public static boolean startingPlayer;
+    private boolean surprisePlayed =GamePlay.surprisePlayed;
+    private int counter=0;
+
 
     @Override
     public void start(Stage primaryStage) {
@@ -131,12 +134,27 @@ public class Backgammon extends Application {
                     dices.setText(player2 +"'s Turn 🎲");
                     theGame.reset();
                     theGame.bluePlays(gridCols, diceOne, diceTwo);
+                    /*System.out.println(surprisePlayed);
+                    if(surprisePlayed&&counter==0)
+                    {
+                    	System.out.println("enter");
+                    	startingPlayer = true;
+                    	counter++;
+                    	
+                    }*/
                 } else {
                     if (diceOne == diceTwo) theGame.setTimes(4);
                     startingPlayer = true;
                     dices.setText(player1 + "'s Turn 🎲");
                     theGame.reset();
                     theGame.blackPlays(gridCols, diceOne, diceTwo);
+                    /*if(surprisePlayed&&counter==0)
+                    {
+                    	System.out.println("enter");
+
+                    	startingPlayer = false;
+                    	counter++;
+                    }*/
                 }
             }
         });
