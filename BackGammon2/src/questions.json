@@ -133,92 +133,70 @@
       "difficulty": "Medium"
     },
     {
-      "questionText": "What is regression testing?",
+      "questionText": "Name two software development methodologies and explain their differences.",
       "options": [
-        "Testing hardware for compatibility.",
-        "Ensuring recent changes haven’t broken existing features.",
-        "A test to measure application speed.",
-        "Testing the UI for responsiveness."
-      ],
-      "correctAnswerIndex": 1,
-      "difficulty": "Medium"
-    },
-    {
-      "questionText": "What is test-driven development (TDD)?",
-      "options": [
-        "A coding practice where tests are written before the code.",
-        "A testing method for hardware systems.",
-        "A debugging approach for existing code.",
-        "An outdated methodology for testing."
+        "Waterfall focuses on sequential steps, Agile focuses on iterative development.",
+        "Waterfall is hardware-based, Agile is software-based.",
+        "Both are used only in testing phases.",
+        "Both are outdated methodologies."
       ],
       "correctAnswerIndex": 0,
       "difficulty": "Medium"
     },
     {
-      "questionText": "What is the purpose of integration testing?",
+      "questionText": "What is regression testing, and why is it necessary?",
       "options": [
-        "To test individual modules in isolation.",
-        "To test how different modules work together.",
-        "To evaluate application performance.",
-        "To debug hardware interactions."
+        "It checks hardware updates.",
+        "It tests new functionality in software.",
+        "It ensures changes haven’t broken existing functionality.",
+        "It verifies the user interface."
       ],
-      "correctAnswerIndex": 1,
+      "correctAnswerIndex": 2,
       "difficulty": "Medium"
     },
     {
-      "questionText": "What is a software design pattern?",
+      "questionText": "Define 'agile software development.'",
       "options": [
-        "A predefined solution to a common problem.",
-        "A template for user interface design.",
-        "A debugging technique.",
-        "An outdated coding practice."
+        "A rigid approach to software development.",
+        "A hardware-oriented development process.",
+        "A flexible and iterative approach to software development.",
+        "A method for debugging code."
       ],
-      "correctAnswerIndex": 0,
+      "correctAnswerIndex": 2,
       "difficulty": "Medium"
     },
     {
-      "questionText": "What is continuous deployment in software engineering?",
+      "questionText": "Explain the concept of test automation and its advantages over manual testing.",
       "options": [
-        "Automatically deploying all changes to production after passing tests.",
-        "Manually updating software every day.",
-        "Deploying new features once a month.",
-        "An approach for hardware updates."
-      ],
-      "correctAnswerIndex": 0,
-      "difficulty": "Hard"
-    },
-    {
-      "questionText": "What is a microservices architecture?",
-      "options": [
-        "A hardware-based system design.",
-        "A design approach where applications are built as a collection of small, independent services.",
-        "A method to debug monolithic applications.",
-        "A practice to optimize user interfaces."
+        "Test automation replaces software engineers.",
+        "Test automation is faster, more reliable, and reduces repetitive tasks.",
+        "Test automation is slower than manual testing.",
+        "Test automation is used only in debugging."
       ],
       "correctAnswerIndex": 1,
       "difficulty": "Hard"
     },
     {
-      "questionText": "What is pair programming?",
+      "questionText": "Explain the importance of the 'V-model' in software development.",
       "options": [
-        "Two programmers work together, one writes code while the other reviews.",
-        "A method to duplicate code for debugging.",
-        "Testing code on multiple devices.",
-        "An outdated collaboration approach."
-      ],
-      "correctAnswerIndex": 0,
-      "difficulty": "Medium"
-    },
-    {
-      "questionText": "What is the primary focus of DevOps?",
-      "options": [
-        "Improving hardware efficiency.",
-        "Integrating development and operations teams to improve collaboration.",
-        "Debugging software post-release.",
-        "Focusing solely on testing."
+        "It eliminates the need for testing.",
+        "It links each development phase to its corresponding testing phase.",
+        "It focuses only on debugging.",
+        "It is an outdated methodology."
       ],
       "correctAnswerIndex": 1,
-      "difficulty": "Medium"
+      "difficulty": "Hard"
+    },
+    {
+      "questionText": "What are some key metrics used to measure software quality?",
+      "options": [
+        "Lines of code and debugging time.",
+        "Defect density, mean time to failure, and customer satisfaction.",
+        "Number of testers and development time.",
+        "System specifications and hardware requirements."
+      ],
+      "correctAnswerIndex": 1,
+      "difficulty": "Hard"
     }
   ]
 }
