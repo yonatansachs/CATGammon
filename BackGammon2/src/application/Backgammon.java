@@ -2,6 +2,9 @@ package application;
 
 import java.util.Random;
 
+import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -15,7 +18,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-
+import javafx.util.Duration;
 import Control.GamePlay;
 import Model.Pawns;
 import View.Firstlayer;
@@ -25,15 +28,20 @@ import View.WhoStarts;
 
 public class Backgammon extends Application {
 
+	public static int secondsElapsed = 0; // Counter for seconds
+	private static Timeline timeline;
     private String difficulty;
-    private boolean startingPlayer;
-
+    public static boolean startingPlayer;
+    private boolean surprisePlayed =GamePlay.surprisePlayed;
+    private int counter=0;
+    Label timerLabel = new Label("Time: 0s");
     @Override
     public void start(Stage primaryStage) {
 
+   
+    	startTimer();
         //-------------------STATEMENTS-------------------------------------
         Pane pane = new Pane();
-
         Firstlayer first = new Firstlayer(primaryStage);
         pane.getChildren().addAll(first.getBoard());
 
@@ -69,6 +77,13 @@ public class Backgammon extends Application {
         
         initializeGame(primaryStage, startingPlayerName);
         
+        timerLabel.setFont(Font.font(null, FontWeight.BOLD, 18));
+        timerLabel.setStyle("-fx-text-fill: white;");
+        timerLabel.setLayoutX(950); // Positioned at the top-right
+        timerLabel.setLayoutY(0);
+        timerLabel.setPrefSize(150, 30);
+        pane.getChildren().add(timerLabel);
+
         //-------------------BUTTON AND LABEL-------------------------------------
         Button dices = new Button("Roll Dice 🎲");
         dices.setLayoutX(10); // Positioned at the left edge
@@ -131,12 +146,14 @@ public class Backgammon extends Application {
                     dices.setText(player2 +"'s Turn 🎲");
                     theGame.reset();
                     theGame.bluePlays(gridCols, diceOne, diceTwo);
+                    
                 } else {
                     if (diceOne == diceTwo) theGame.setTimes(4);
                     startingPlayer = true;
                     dices.setText(player1 + "'s Turn 🎲");
                     theGame.reset();
                     theGame.blackPlays(gridCols, diceOne, diceTwo);
+                   
                 }
             }
         });
@@ -212,8 +229,45 @@ public class Backgammon extends Application {
         }
     }
 
+    public void startTimer() {
+        // Create a KeyFrame that executes every second
+        KeyFrame keyFrame = new KeyFrame(Duration.seconds(1), e -> {
+            secondsElapsed++;
+            int minutes = secondsElapsed / 60; // Calculate minutes
+            int seconds = secondsElapsed % 60; // Calculate remaining seconds
+            if(seconds<10)
+            {
+            	 if(minutes<10)
+                     timerLabel.setText(String.format("Time: 0%d : 0%d", minutes, seconds)); // Update the Label
+                 else
+                 	timerLabel.setText(String.format("Time: %d : 0%d", minutes, seconds)); // Update the Label
+            }
+            else
+            {
+            	if(minutes<10)
+                    timerLabel.setText(String.format("Time: 0%d : %d", minutes, seconds)); // Update the Label
+                else
+                	timerLabel.setText(String.format("Time: %d : %d", minutes, seconds)); // Update the Label
+            }
+            
+        });
 
-    private void initializeGame(Stage primaryStage, String startingPlayer) {
+        // Initialize the Timeline with the KeyFrame
+        timeline = new Timeline(keyFrame);
+
+        // Set the cycle count to indefinite to keep the timer running
+        timeline.setCycleCount(Timeline.INDEFINITE);
+
+        // Start the timer
+        timeline.play();
+    }
+    public static void stopTimer() {
+        if (timeline != null) {
+            timeline.stop(); // Stop the timer
+            System.out.println("Final elapsed time: " + secondsElapsed + " seconds");
+        }
+    }
+private void initializeGame(Stage primaryStage, String startingPlayer) {
         // Your existing game initialization logic here
         System.out.println("Initializing game with starting player: " + startingPlayer);
 
