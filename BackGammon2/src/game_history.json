@@ -1,0 +1,5 @@
+[
+  {"player1": "Alice", "player2": "Bob", "winner": "Alice", "difficulty": "Easy", "duration": "5 minutes"},
+  {"player1": "Charlie", "player2": "Dana", "winner": "Dana", "difficulty": "Medium", "duration": "8 minutes"},
+  {"player1": "Eve", "player2": "Frank", "winner": "Frank", "difficulty": "Hard", "duration": "12 minutes"}
+]

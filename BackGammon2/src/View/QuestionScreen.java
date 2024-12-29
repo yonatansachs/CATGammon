@@ -19,10 +19,77 @@ import javafx.stage.Stage;
 public class QuestionScreen {
 
     private final SysData sysData = SysData.getInstance(); // Singleton SysData
+
+    /*public void show(Stage owner, String difficulty) {
+        // Fetch a random question based on the given difficulty
+        Question randomQuestion = sysData.getRandomQuestion(difficulty);
+
+        if (randomQuestion == null) {
+            showError("No questions available for the selected difficulty.");
+            return;
+        }
+
+        Stage questionStage = new Stage();
+        questionStage.initOwner(owner);
+        questionStage.initModality(Modality.APPLICATION_MODAL);
+
+        // Background Image with GaussianBlur
+        Image backgroundImage = new Image(getClass().getResourceAsStream("backgammon2.png"));
+        ImageView backgroundImageView = new ImageView(backgroundImage);
+        backgroundImageView.setFitWidth(400); 
+        backgroundImageView.setFitHeight(300);
+        backgroundImageView.setPreserveRatio(false);
+        backgroundImageView.setEffect(new GaussianBlur(50));
+
+        // Question Label
+        Label questionLabel = new Label(randomQuestion.getQuestionText());
+        questionLabel.setStyle("-fx-font-size: 16px; -fx-wrap-text: true; -fx-text-fill: white;");
+        questionLabel.setWrapText(true);
+        questionLabel.setAlignment(Pos.CENTER);
+
+        // Options Buttons
+        VBox optionsBox = new VBox(10); // Vertical box with spacing
+        optionsBox.setAlignment(Pos.CENTER); // Center align
+        optionsBox.setStyle("-fx-background-color: rgba(0,0,0,0.6); -fx-padding: 10;");
+
+        // Adding buttons
+        String[] options = randomQuestion.getOptions();
+        for (int i = 0; i < options.length; i++) {
+            Button optionButton = new Button(options[i]);
+            optionButton.setStyle("-fx-font-size: 14px; -fx-pref-width: 250; -fx-wrap-text: true;");
+            optionButton.setWrapText(true); // Allow text wrapping for long answers
+
+            // Lambda to check answer
+            int selectedOption = i;
+            optionButton.setOnAction(event -> {
+                if (selectedOption == randomQuestion.getCorrectAnswerIndex()) {
+                    showCorrectMessage(questionStage);
+                } else {
+                    showWrongMessage();
+                }
+            });
+
+            optionsBox.getChildren().add(optionButton); // Add button to VBox
+        }
+
+
+        // Layout
+        VBox rootLayout = new VBox(20, questionLabel, optionsBox);
+        rootLayout.setAlignment(Pos.CENTER);
+
+        StackPane root = new StackPane();
+        root.getChildren().addAll(backgroundImageView, rootLayout);
+        root.setStyle("-fx-padding: 20;");
+
+        Scene scene = new Scene(root, 800, 590);
+        questionStage.setTitle("Answer the Question");
+        questionStage.setScene(scene);
+        questionStage.showAndWait();
+    }*/
     
     public void show(Stage owner, String difficulty) {
         // Fetch a random question based on the given difficulty
-        Question randomQuestion = sysData.getRandomQuestion(QuestionLevel.questionDifficulty2);
+        Question randomQuestion = sysData.getRandomQuestion(difficulty);
 
         if (randomQuestion == null) {
             showError("No questions available for the selected difficulty.");
