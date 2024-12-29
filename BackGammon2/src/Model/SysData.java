@@ -14,8 +14,8 @@ public class SysData {
     private static SysData instance;
     private List<Question> questions;
     private final List<GameRecord> history; // List to store game history
-    private final String QUESTIONS_FILE = "src/questions.json";
-    private final String HISTORY_FILE = "src/game_history.json";
+    private final String QUESTIONS_FILE = "src/View/questions.json";
+    private final String HISTORY_FILE = "src/View/game_history.json";
 
     private SysData() {
         questions = new ArrayList<>();
@@ -33,7 +33,7 @@ public class SysData {
     }
 
     private void loadQuestions() {
-        try (BufferedReader reader = new BufferedReader(new FileReader("src/questions.json"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("src/View/questions.json"))) {
             StringBuilder jsonContent = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {

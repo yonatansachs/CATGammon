@@ -50,7 +50,7 @@ public class GamePlay extends Pawns{
     private int[] sevenNum = new int[30];
     public static Stage mainStage;
     private int counter =0;
-    private static final String HISTORY_FILE = "src/game_history.json";
+    private static final String HISTORY_FILE = "src/View/game_history.json";
 
     //private int surpriseSpot = -1;
     public static int [] questions = {-1,-1,-1};
