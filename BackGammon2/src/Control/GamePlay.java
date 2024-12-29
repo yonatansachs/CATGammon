@@ -1,6 +1,14 @@
 package Control;
 
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -8,6 +16,8 @@ import javax.swing.text.Element;
 import javafx.scene.image.ImageView;
 
 import Model.Pawns;
+import View.Login;
+import View.QuestionLevel;
 import View.QuestionScreen;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -22,8 +32,8 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
-
-
+import application.Backgammon;
+import View.SurprisePopUp;
 public class GamePlay extends Pawns{
     
 	public static String difficulty;
@@ -40,14 +50,12 @@ public class GamePlay extends Pawns{
     private int[] sevenNum = new int[30];
     public static Stage mainStage;
     private int counter =0;
-    private static final String HISTORY_FILE = "src/View/game_history.json";
-   
-    
+    private static final String HISTORY_FILE = "src/game_history.json";
 
     //private int surpriseSpot = -1;
     public static int [] questions = {-1,-1,-1};
     public static int surprise =-1;
-    private boolean surprisePlayed =false;
+    public static boolean surprisePlayed =false;
 
     public GamePlay(GridPane[] setP, Stage a, String difficulty) {
     	this.difficulty = difficulty;
@@ -88,14 +96,25 @@ public class GamePlay extends Pawns{
         	  while(usedPositions.contains(surprise))
         	  {
         		  surprise = selectRandomSpot();
+        		  
+        		  
         	  }
+        	  
           }
         
         
         initializePawns(setP);
     }
     
-    public static int[] getQuestions() {
+    private void handleSurpriseSpot(GridPane[] grid, int column) {
+    	if(column == surprise)
+    	{
+    		surprisePlayed = true;
+    	}
+		
+	}
+
+	public static int[] getQuestions() {
 		return questions;
 	}
 
@@ -104,12 +123,29 @@ public class GamePlay extends Pawns{
 	}
 
 	private void handleQuestionSpot(GridPane[] grid, int column) {
-       for(int i=0;i<3;i++)
+		Random rand = new Random();
+       
+		for(int i=0;i<3;i++)
        {
     	   if (!difficulty.equals("Easy") && column == questions[i]) {
-               System.out.println("Question spot reached!");
-               QuestionScreen questionScreen = new QuestionScreen();
-               questionScreen.show(mainStage, difficulty);
+               int num = rand.nextInt(3)+1;
+               String questiondifficulty ="";
+               switch(num)
+               {
+               case 1:
+            	   questiondifficulty = "Easy"; 
+            	   break;
+               case 2:
+            	   questiondifficulty = "Medium";
+            	   break;
+               case 3:
+            	   questiondifficulty = "Hard";
+            	   break;
+               default : break;
+               }
+               
+               QuestionLevel questionLevel = new QuestionLevel();
+               questionLevel.show(mainStage, questiondifficulty);
            }
        }
     	
@@ -510,6 +546,7 @@ public class GamePlay extends Pawns{
 
         // Checking if the pawn reached the spot
         handleQuestionSpot(grid, column + dice);
+        handleSurpriseSpot(grid,column+dice);
         
         //check if pawn reached surprise spot
     }
@@ -609,7 +646,15 @@ public class GamePlay extends Pawns{
     }
     }
     public void bluePlays(GridPane[] grid,int dOne,int dTwo){
-      
+    	
+		if(surprisePlayed&&counter==0)
+        {
+			SurprisePopUp popup = new SurprisePopUp();
+    		popup.show(mainStage); // Replace 'primaryStage' with your main stage variable.
+        	Backgammon.startingPlayer = true;
+        	counter++;
+        	
+        }
         int[] blue=new int[30];
         int[] oneBlack= new int[30];
         int[] empty=new int[30];
@@ -621,7 +666,9 @@ public class GamePlay extends Pawns{
         if(blueGameE(blue)){
 
             try {
-                
+                Backgammon.stopTimer();
+        		addGameToHistory(Login.player1,Login.player2,Login.player1,difficulty,Backgammon.secondsElapsed);
+
                 Stage stage=new Stage(); 
                     
                 Group group = new Group();
@@ -905,7 +952,7 @@ public class GamePlay extends Pawns{
         else{
             
         for(int gg=0; gg<24; gg++){        
-        if((gg+dOne<24) && (gg+dTwo<24) ){    
+        if((gg+dOne<24) || (gg+dTwo<24) ){    
         final int l=gg;        
        if (blue[gg]!=0 &&
         		((gg+dOne>=0 && gg+dOne <24 &&
@@ -935,7 +982,15 @@ public class GamePlay extends Pawns{
 
     public void blackPlays(GridPane[] grid,int dOne,int dTwo){
     
-        
+    	if(surprisePlayed&&counter==0)
+        {
+    		SurprisePopUp popup = new SurprisePopUp();
+    		popup.show(mainStage); // Replace 'primaryStage' with your main stage variable.
+
+    		Backgammon.startingPlayer = false;
+        	counter++;
+        	
+        }
         int[] black=new int[30];
         int[] oneBlue= new int[30];
         int[] empty=new int[30];
@@ -949,6 +1004,8 @@ public class GamePlay extends Pawns{
     
                     try {       Stage stage=new Stage(); 
 
+                    Backgammon.stopTimer();
+            		addGameToHistory(Login.player1,Login.player2,Login.player2,difficulty,Backgammon.secondsElapsed);
                     Group group = new Group();
                     Scene scene = new Scene(group, 500, 500, Color.BLACK);
                     stage.setTitle("BLACK WINS");
@@ -1343,6 +1400,8 @@ public class GamePlay extends Pawns{
 
         // Checking if the pawn reached the spot
         handleQuestionSpot(grid, column - dice);
+        handleSurpriseSpot(grid,column-dice);
+
     }
 
         
@@ -1477,4 +1536,54 @@ public class GamePlay extends Pawns{
         }
          return true;
     } 
+    public static void addGameToHistory(String player1, String player2, String winner, String difficulty, int secondsElapsed) {
+        List<String> historyLines = new ArrayList<>();
+        
+        // Step 1: Read existing file content (if it exists)
+        try (BufferedReader reader = new BufferedReader(new FileReader(HISTORY_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                historyLines.add(line.trim());
+            }
+        } catch (IOException e) {
+            // File doesn't exist, initialize a new history
+            historyLines.add("[");
+        }
+
+        // Step 2: Remove the closing bracket of the JSON array (if it exists)
+        if (!historyLines.isEmpty() && historyLines.get(historyLines.size() - 1).equals("]")) {
+            historyLines.remove(historyLines.size() - 1);
+        }
+
+        // Step 3: Add the new game result
+        String newGameEntry = String.format(
+            "  {\n" +
+            "    \"player1\": \"%s\",\n" +
+            "    \"player2\": \"%s\",\n" +
+            "    \"winner\": \"%s\",\n" +
+            "    \"difficulty\": \"%s\",\n" +
+            "    \"duration\": \"%s seconds\"\n" +
+            "  }",
+            player1, player2, winner, difficulty, secondsElapsed
+        );
+        if (!historyLines.isEmpty() && !historyLines.get(0).equals("[")) {
+            historyLines.add(","); // Add a comma if this is not the first entry
+        }
+        historyLines.add(newGameEntry);
+
+        // Step 4: Close the JSON array
+        historyLines.add("]");
+
+        // Step 5: Write the updated history back to the file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(HISTORY_FILE))) {
+            for (String line : historyLines) {
+                writer.write(line);
+                writer.newLine();
+            }
+            System.out.println("Game history updated successfully.");
+        } catch (IOException e) {
+            System.err.println("Failed to write to history file: " + e.getMessage());
+        }
+    }
+
 }
