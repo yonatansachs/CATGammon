@@ -18,150 +18,121 @@ import javafx.stage.Stage;
 
 public class Login extends Application {
 
-	public static String player1 = "";
-	public static String player2 = "";
+    public static String player1 = "";
+    public static String player2 = "";
+
     @Override
     public void start(Stage primaryStage) {
-        // Create a StackPane for the layout to layer the background and login content
         StackPane root = new StackPane();
 
-        // Add the background image with GaussianBlur
+        // Background image with Gaussian blur
         Image backgroundImage = new Image(getClass().getResourceAsStream("backgammon2.png"));
         ImageView backgroundImageView = new ImageView(backgroundImage);
-        backgroundImageView.setFitWidth(1000); // Adjust to your scene width
-        backgroundImageView.setFitHeight(700); // Adjust to your scene height
+        backgroundImageView.setFitWidth(1000);
+        backgroundImageView.setFitHeight(700);
         backgroundImageView.setPreserveRatio(false);
-        backgroundImageView.setEffect(new GaussianBlur(50)); // Apply Gaussian blur effect
+        backgroundImageView.setEffect(new GaussianBlur(50));
 
-        // Create a VBox for the login layout
-        VBox loginLayout = new VBox(15); // Increased spacing for better layout
+        VBox loginLayout = new VBox(15);
         loginLayout.setStyle("-fx-padding: 20; -fx-alignment: center;");
 
-        // Add a title to the login screen
         Label titleLabel = new Label("Welcome to CATGammon!");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 45)); // Larger font for the title
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 45));
         titleLabel.setStyle("-fx-text-fill: white;");
-        titleLabel.setEffect(new DropShadow(10, Color.BLACK)); // Shadow effect for better contrast
-    
-        // Add login elements
+        titleLabel.setEffect(new DropShadow(10, Color.BLACK));
+
         Label player1Label = new Label("Player 1:");
         styleLabel(player1Label);
-
         TextField player1Field = new TextField();
         styleTextField(player1Field);
 
         Label player2Label = new Label("Player 2:");
         styleLabel(player2Label);
-
         TextField player2Field = new TextField();
         styleTextField(player2Field);
 
         Label errorLabel = new Label();
         errorLabel.setStyle("-fx-text-fill: red; -fx-font-size: 14px; -fx-font-style: italic;");
 
-        // Button Styling
-        String buttonStyle = "-fx-background-color: #4CAF50; " +    // Green background
-                             "-fx-text-fill: white; " +             // White text
-                             "-fx-font-size: 18px; " +              // Font size
-                             "-fx-background-radius: 20; " +        // Rounded corners
-                             "-fx-font-weight: bold; " +            // Bold text
-                             "-fx-pref-width: 200; " +              // Preferred width
-                             "-fx-pref-height: 40;";                // Preferred height
+        // Button styles
+        String buttonStyle = "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 18px; " +
+                             "-fx-background-radius: 20; -fx-font-weight: bold; -fx-pref-width: 200; -fx-pref-height: 40;";
+        String hoverStyle = "-fx-background-color: #45a049;";
 
-        String hoverStyle = "-fx-background-color: #45a049;";       // Slightly darker green for hover
-
-        // Login Button
         Button loginButton = new Button("Login");
         loginButton.setStyle(buttonStyle);
         loginButton.setOnMouseEntered(e -> loginButton.setStyle(buttonStyle + hoverStyle));
         loginButton.setOnMouseExited(e -> loginButton.setStyle(buttonStyle));
-
         loginButton.setOnAction(event -> {
             player1 = player1Field.getText();
             player2 = player2Field.getText();
-            
 
             if (validateCredentials(player1, player2)) {
-                // Transition to Game Level Selection screen
                 GameLevelScreen levelSelectionScreen = new GameLevelScreen();
-                levelSelectionScreen.start(primaryStage); // Navigate to the LevelSelectionScreen
+                levelSelectionScreen.start(primaryStage);
             } else {
                 errorLabel.setText("Invalid username or password. Please try again!");
             }
         });
 
-        // History Button
         Button historyButton = new Button("History");
         historyButton.setStyle(buttonStyle);
         historyButton.setOnMouseEntered(e -> historyButton.setStyle(buttonStyle + hoverStyle));
         historyButton.setOnMouseExited(e -> historyButton.setStyle(buttonStyle));
-
         historyButton.setOnAction(event -> {
             HistoryScreen historyScreen = new HistoryScreen();
-            historyScreen.start(primaryStage); // Switch to the History screen
+            historyScreen.start(primaryStage);
         });
 
-        // Add all elements to the VBox
-        loginLayout.getChildren().addAll(titleLabel,
-                player1Label, player1Field,
-                player2Label, player2Field,
-                loginButton, errorLabel,
-                historyButton);
-
-        // Add the background and login layout to the root
-        root.getChildren().addAll(backgroundImageView, loginLayout);
-
-        // Create and set the scene
-        Scene loginScene = new Scene(root, 1000, 700); // Adjust size as needed
-        primaryStage.setTitle("Login");
-        primaryStage.setScene(loginScene);
-        primaryStage.show();
-        
-        // Instructions Button
+        // Instructions button
         Button instructionsButton = new Button("Instructions");
         instructionsButton.setStyle(buttonStyle);
         instructionsButton.setOnMouseEntered(e -> instructionsButton.setStyle(buttonStyle + hoverStyle));
         instructionsButton.setOnMouseExited(e -> instructionsButton.setStyle(buttonStyle));
-
-        // Button Action: Open the Instructions Screen
         instructionsButton.setOnAction(event -> {
             BackgammonInstructions instructionsScreen = new BackgammonInstructions();
-            instructionsScreen.start(primaryStage); // Navigate to the Instructions screen
+            instructionsScreen.start(primaryStage);
         });
 
-        // Add the Instructions Button to the VBox layout
-        loginLayout.getChildren().addAll(instructionsButton);
+        // Manage Questions button
+        Button manageQuestionsButton = new Button("Manage Questions");
+        manageQuestionsButton.setStyle(buttonStyle);
+        manageQuestionsButton.setOnMouseEntered(e -> manageQuestionsButton.setStyle(buttonStyle + hoverStyle));
+        manageQuestionsButton.setOnMouseExited(e -> manageQuestionsButton.setStyle(buttonStyle));
+        manageQuestionsButton.setOnAction(event -> {
+            manageQuestions manageQuestionsScreen = new manageQuestions();
+            manageQuestionsScreen.start(primaryStage);
+        });
 
+        loginLayout.getChildren().addAll(
+                titleLabel, player1Label, player1Field, player2Label, player2Field,
+                loginButton, errorLabel, historyButton, instructionsButton, manageQuestionsButton);
+
+        root.getChildren().addAll(backgroundImageView, loginLayout);
+
+        Scene loginScene = new Scene(root, 1000, 700);
+        primaryStage.setTitle("Login");
+        primaryStage.setScene(loginScene);
+        primaryStage.show();
     }
 
     private boolean validateCredentials(String player1, String player2) {
-        // Replace with real authentication logic
-        return player1 != null && !player1.trim().isEmpty() &&
-               player2 != null && !player2.trim().isEmpty();
+        return player1 != null && !player1.trim().isEmpty() && player2 != null && !player2.trim().isEmpty();
     }
 
-    // Style method for Labels
     private void styleLabel(Label label) {
         label.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.ITALIC, 22));
         label.setStyle("-fx-text-fill: white; -fx-padding: 5px;");
     }
 
-    // Style method for TextFields
     private void styleTextField(TextField textField) {
-        textField.setMaxWidth(300); // Set maximum width explicitly
-        textField.setPrefHeight(30); // Set height explicitly
-        textField.setStyle("-fx-border-color: #4CAF50; " +          // Green border
-                           "-fx-border-radius: 15; " +              // Rounded corners for border
-                           "-fx-background-radius: 15; " +          // Rounded corners for background
-                           "-fx-padding: 5px; " +                   // Padding inside the field
-                           "-fx-font-size: 16px;");                 // Font size
+        textField.setMaxWidth(300);
+        textField.setPrefHeight(30);
+        textField.setStyle("-fx-border-color: #4CAF50; -fx-border-radius: 15; -fx-background-radius: 15; " +
+                           "-fx-padding: 5px; -fx-font-size: 16px;");
     }
-    
-    
-    
 
     public static void main(String[] args) {
         launch(args);
-
     }
 }

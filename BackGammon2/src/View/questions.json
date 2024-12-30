@@ -144,7 +144,7 @@
       "difficulty": "Medium"
     },
     {
-      "questionText": "What is regression testing, and why is it necessary?",
+      "questionText": "What is regression testing",
       "options": [
         "It checks hardware updates.",
         "It tests new functionality in software.",

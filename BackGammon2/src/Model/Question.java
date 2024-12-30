@@ -37,4 +37,21 @@ public class Question {
         System.out.println("Correct Answer Index: " + correctAnswerIndex);
         System.out.println("Difficulty: " + difficulty);
     }
+
+	public void setQuestionText(String text) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void setOptions(String[] options) {
+		this.options = options;
+	}
+
+	public void setCorrectAnswerIndex(int correctAnswerIndex) {
+		this.correctAnswerIndex = correctAnswerIndex;
+	}
+
+	public void setDifficulty(String difficulty) {
+		this.difficulty = difficulty;
+	}
 }
