@@ -117,8 +117,7 @@ public class Login extends Application {
         primaryStage.setScene(loginScene);
         primaryStage.show();
         
-        
-     // Instructions Button
+        // Instructions Button
         Button instructionsButton = new Button("Instructions");
         instructionsButton.setStyle(buttonStyle);
         instructionsButton.setOnMouseEntered(e -> instructionsButton.setStyle(buttonStyle + hoverStyle));

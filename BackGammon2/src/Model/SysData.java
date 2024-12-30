@@ -12,7 +12,7 @@ import javafx.util.Callback;
 
 public class SysData {
     private static SysData instance;
-    private List<Question> questions;
+    private static List<Question> questions;
     private final List<GameRecord> history; // List to store game history
     private final String QUESTIONS_FILE = "src/View/questions.json";
     private final String HISTORY_FILE = "src/View/game_history.json";
@@ -82,7 +82,7 @@ public class SysData {
         return value;
     }
 
-    public Question getRandomQuestion(String difficulty) {
+    public static Question getRandomQuestion(String difficulty) {
         List<Question> filteredQuestions = new ArrayList<>();
         for (Question question : questions) {
             if (question.getDifficulty().equalsIgnoreCase(difficulty)) {
