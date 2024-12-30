@@ -17,7 +17,6 @@ import javafx.scene.image.ImageView;
 
 import Model.Pawns;
 import View.Login;
-import View.QuestionLevel;
 import View.QuestionScreen;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -79,7 +78,7 @@ public class GamePlay extends Pawns{
         Set<Integer> usedPositions = new HashSet<>(); // Track already used positions
         // Randomly choose a spot
         for(int i=0;i<3;i++)
-        if (!difficulty.equals("Easy")) {
+         {
         	//surpriseSpot = selectRandomSpot();
         	questions[i] = selectRandomSpot();
         	while(usedPositions.contains(questions[i]))
@@ -87,20 +86,15 @@ public class GamePlay extends Pawns{
         	usedPositions.add(questions[i]);
         	
             System.out.println("Surprise spot selected: " + questions[i]);
-           
-
         } 
-          if (difficulty.equals("Hard"))
-          {
-        	  surprise = selectRandomSpot();
-        	  while(usedPositions.contains(surprise))
-        	  {
-        		  surprise = selectRandomSpot();
-        		  
-        		  
-        	  }
+          
+        surprise = selectRandomSpot();
+        while(usedPositions.contains(surprise))
+        {
+        	surprise = selectRandomSpot();	  
+         }
         	  
-          }
+          
         
         
         initializePawns(setP);
@@ -110,6 +104,7 @@ public class GamePlay extends Pawns{
     	if(column == surprise)
     	{
     		surprisePlayed = true;
+    		
     	}
 		
 	}
@@ -121,13 +116,13 @@ public class GamePlay extends Pawns{
 	public void setQuestions(int[] surprise) {
 		this.questions = surprise;
 	}
-
-	private void handleQuestionSpot(GridPane[] grid, int column) {
+	
+	public void handleQuestionSpot(GridPane[] grid, int column) {
 		Random rand = new Random();
        
 		for(int i=0;i<3;i++)
        {
-    	   if (!difficulty.equals("Easy") && column == questions[i]) {
+    	   if (column == questions[i]) {
                int num = rand.nextInt(3)+1;
                String questiondifficulty ="";
                switch(num)
@@ -144,8 +139,8 @@ public class GamePlay extends Pawns{
                default : break;
                }
                
-               QuestionLevel questionLevel = new QuestionLevel();
-               questionLevel.show(mainStage, questiondifficulty);
+               QuestionScreen questionLevel = new QuestionScreen();
+               questionLevel.show(mainStage, questiondifficulty,"spot");
            }
        }
     	
@@ -156,7 +151,7 @@ public class GamePlay extends Pawns{
 	
 	////////////////////////////////////////////////////////
 	private void handleSurprise(GridPane[] grid, int column) {
-	    	   if (!surprisePlayed && difficulty.equals("Hard") && column == surprise) {
+	    	   if (!surprisePlayed && column == surprise) {
 	               System.out.println("Surprise spot reached!");
 	              //anotherTurn logic implementation
 	               surprisePlayed = true;
@@ -459,6 +454,8 @@ public class GamePlay extends Pawns{
 
     public void playBlue(GridPane[] grid,int column,int a,int b){
 
+
+    	
         int[] oneBlack = new int[30];
         int[] blues = new int[30];
         int[] empty = new int[30];
@@ -651,7 +648,7 @@ public class GamePlay extends Pawns{
         {
 			SurprisePopUp popup = new SurprisePopUp();
     		popup.show(mainStage); // Replace 'primaryStage' with your main stage variable.
-        	Backgammon.startingPlayer = true;
+        	//Backgammon.startingPlayer = true;
         	counter++;
         	
         }
@@ -987,7 +984,7 @@ public class GamePlay extends Pawns{
     		SurprisePopUp popup = new SurprisePopUp();
     		popup.show(mainStage); // Replace 'primaryStage' with your main stage variable.
 
-    		Backgammon.startingPlayer = false;
+    		//Backgammon.startingPlayer = false;
         	counter++;
         	
         }
@@ -1312,6 +1309,7 @@ public class GamePlay extends Pawns{
     }
     
     public void playBlack(GridPane[] grid,int column,int a,int b){
+
 
         int[] oneBlue = new int[30];
         int[] black = new int[30];

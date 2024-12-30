@@ -21,9 +21,12 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import Control.GamePlay;
 import Model.Pawns;
+import Model.SysData;
 import View.Firstlayer;
 import View.Login;
+import View.QuestionScreen;
 import View.SecondLayer;
+import View.SurprisePopUp;
 import View.WhoStarts;
 
 public class Backgammon extends Application {
@@ -133,6 +136,10 @@ public class Backgammon extends Application {
             @Override
             public void handle(ActionEvent event) {
                 theGame.setTimes(2);
+                QuestionScreen.bool = false;
+                if(!difficulty.equals("Easy"))
+                	rollQuestionDice();
+                
                 Random rand = new Random();
 
                 int diceOne = rand.nextInt(6) + 1;
@@ -142,7 +149,18 @@ public class Backgammon extends Application {
                 two.setText(String.valueOf(diceTwo));
                 String player1 = Login.player1;
                 String player2 = Login.player2;
+                if(GamePlay.surprisePlayed&&counter==0)
+                {
+  
+            		if(startingPlayer)
+            			startingPlayer = false;
+            		else
+            			startingPlayer = true;
+                	counter++;
+                	
+                }
                 if (startingPlayer) {
+                	
                     if (diceOne == diceTwo) theGame.setTimes(4);
                     startingPlayer = false;
                     dices.setText(player2 +"'s Turn 🎲");
@@ -160,8 +178,7 @@ public class Backgammon extends Application {
             }
         });
         placeQuestionMarks(gridCols,pane);
-        if(GamePlay.difficulty.equals("Hard"))
-        	placeSurprise(gridCols,pane);
+        placeSurprise(gridCols,pane);
 
         //-------------------SCENE AND STAGE-------------------------------------
         pane.getChildren().addAll(dices, one, two);
@@ -176,6 +193,29 @@ public class Backgammon extends Application {
         primaryStage.setResizable(false);
 
         primaryStage.show();
+    }
+    public void rollQuestionDice()
+    {
+    	Random rand = new Random();
+                int num = rand.nextInt(3)+1;
+                String questiondifficulty ="";
+                switch(num)
+                {
+                case 1:
+             	   questiondifficulty = "Easy"; 
+             	   break;
+                case 2:
+             	   questiondifficulty = "Medium";
+             	   break;
+                case 3:
+             	   questiondifficulty = "Hard";
+             	   break;
+                default : break;
+                }
+                
+                QuestionScreen questionLevel = new QuestionScreen();
+                questionLevel.show(GamePlay.mainStage, questiondifficulty,"game");
+        
     }
     private void placeSurprise(GridPane[] gridCols, Pane parentPane) {
     	Label surprise = new Label("🎁");
