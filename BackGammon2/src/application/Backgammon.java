@@ -38,9 +38,9 @@ public class Backgammon extends Application {
     private boolean surprisePlayed =GamePlay.surprisePlayed;
     private int counter=0;
     Label timerLabel = new Label("Time: 0s");
+    public static GamePlay theGame;
     @Override
     public void start(Stage primaryStage) {
-
    
     	startTimer();
         //-------------------STATEMENTS-------------------------------------
@@ -60,7 +60,9 @@ public class Backgammon extends Application {
             pane.getChildren().add(gridCols[i]);
         }
 
-        GamePlay theGame = new GamePlay(gridCols, primaryStage, difficulty);
+        //GamePlay theGame = new GamePlay(gridCols, primaryStage, difficulty);
+        theGame = new GamePlay(gridCols, primaryStage, difficulty);
+
         
         WhoStarts whoStartsScreen = new WhoStarts();
         startingPlayer = whoStartsScreen.determineStartingPlayer(primaryStage);
