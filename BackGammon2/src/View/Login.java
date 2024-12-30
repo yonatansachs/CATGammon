@@ -1,6 +1,5 @@
 package View;
 
-import application.Backgammon;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -163,6 +162,5 @@ public class Login extends Application {
 
     public static void main(String[] args) {
         launch(args);
-
     }
 }
