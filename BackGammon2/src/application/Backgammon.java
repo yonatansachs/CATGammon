@@ -39,6 +39,8 @@ public class Backgammon extends Application {
     private int counter=0;
     Label timerLabel = new Label("Time: 0s");
     public static GamePlay theGame;
+    public static int dice1;
+    public static int dice2;
     @Override
     public void start(Stage primaryStage) {
    
@@ -145,6 +147,9 @@ public class Backgammon extends Application {
                 int diceOne = rand.nextInt(6) + 1;
                 int diceTwo = rand.nextInt(6) + 1;
 
+                dice1 = diceOne;
+                dice2 = diceTwo;
+                
                 one.setText(String.valueOf(diceOne));
                 two.setText(String.valueOf(diceTwo));
                 String player1 = Login.player1;
