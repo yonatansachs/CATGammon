@@ -1,9 +1,16 @@
 [
+{
+"player1": "Yonatan",
+"player2": "Matan",
+"winner": "Yonatan",
+"difficulty": "Easy",
+"duration": "174 seconds"
+}
   {
     "player1": "Yonatan",
-    "player2": "Matan",
+    "player2": "Gal",
     "winner": "Yonatan",
     "difficulty": "Easy",
-    "duration": "174 seconds"
+    "duration": "188 seconds"
   }
 ]
