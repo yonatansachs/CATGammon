@@ -49,7 +49,7 @@ public class GamePlay extends Pawns{
     private int[] sevenNum = new int[30];
     public static Stage mainStage;
     private int counter =0;
-    private static final String HISTORY_FILE = "src/View/game_history.json";
+    private static final String HISTORY_FILE = "game_history.json";
 
     //private int surpriseSpot = -1;
     public static int [] questions = {-1,-1,-1};
@@ -1555,7 +1555,7 @@ public class GamePlay extends Pawns{
 
         // Step 3: Add the new game result
         String newGameEntry = String.format(
-            "  {\n" +
+            "  ,{\n" +
             "    \"player1\": \"%s\",\n" +
             "    \"player2\": \"%s\",\n" +
             "    \"winner\": \"%s\",\n" +

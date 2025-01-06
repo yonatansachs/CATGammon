@@ -1,4 +1,5 @@
 package View;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -8,13 +9,11 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.awt.Color;
-import java.awt.Font;
+import Model.Question;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import Model.Question;
 
 public class manageQuestions extends Application {
     private List<Question> questions;
@@ -26,7 +25,10 @@ public class manageQuestions extends Application {
     private TextField option3Field;
     private TextField option4Field;
     private ComboBox<Integer> correctAnswerIndexField;
-    private ComboBox<String> difficultyField = new ComboBox<>();
+    private ComboBox<String> difficultyField;
+
+    // Define the correct path to questions.json (same as SysData)
+    private final String QUESTIONS_FILE = "questions.json"; // Ensure this is the correct path
 
     public static void main(String[] args) {
         launch(args);
@@ -40,48 +42,61 @@ public class manageQuestions extends Application {
         Scene scene = new Scene(root, 600, 700);
         primaryStage.setScene(scene);
         primaryStage.show();
-        
     }
 
+    /**
+     * Creates the main layout containing all sections.
+     */
     private VBox createMainLayout(Stage primaryStage) {
         VBox root = new VBox(10);
         root.setPadding(new Insets(10));
-        
+
         GridPane addGrid = createAddQuestionGrid();
-        VBox editBox = createEditSection(addGrid);
+        VBox editBox = createEditSection();
         VBox deleteBox = createDeleteSection();
         VBox controlButtonsSection = createControlButtonsSection(primaryStage);
 
+        root.getChildren().addAll(
+                new Label("Add Question"),
+                addGrid,
+                editBox,
+                deleteBox,
+                controlButtonsSection
+        );
 
-        
-        root.getChildren().addAll(new Label("Add Question"), addGrid, editBox, deleteBox,controlButtonsSection);
         updateComboBoxes();
         return root;
     }
 
+    /**
+     * Creates the "Clear Fields" and "Back" buttons.
+     */
     private VBox createControlButtonsSection(Stage primaryStage) {
-        // Create the "Clear Fields" button
         Button clearFieldsButton = new Button("Clear Fields");
         clearFieldsButton.setOnAction(event -> clearFields());
 
-        // Create the "Back" button
         Button backButton = new Button("Back");
         backButton.setOnAction(event -> {
-            Login loginScreen = new Login(); // Replace with your Login class
-            loginScreen.start(primaryStage); // Navigate back to the Login screen
+            
+            Login loginScreen = new Login();
+            loginScreen.start(primaryStage);
+            //primaryStage.close(); // Placeholder action
         });
 
-        // Style buttons (optional)
+        // Optional styling
         clearFieldsButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
         backButton.setStyle("-fx-background-color: #FF6347; -fx-text-fill: white;");
 
-        // Add buttons to a VBox
-        VBox buttonSection = new VBox(10, clearFieldsButton, backButton); // Spacing between buttons
+        VBox buttonSection = new VBox(10, clearFieldsButton, backButton);
         buttonSection.setPadding(new Insets(10));
         buttonSection.setAlignment(Pos.CENTER);
 
         return buttonSection;
     }
+
+    /**
+     * Creates the grid for adding a new question.
+     */
     private GridPane createAddQuestionGrid() {
         GridPane addGrid = new GridPane();
         addGrid.setHgap(10);
@@ -92,16 +107,12 @@ public class manageQuestions extends Application {
         option2Field = new TextField();
         option3Field = new TextField();
         option4Field = new TextField();
-        correctAnswerIndexField = new ComboBox();
-        correctAnswerIndexField.getItems().add(0);
-        correctAnswerIndexField.getItems().add(1);
-        correctAnswerIndexField.getItems().add(2);
-        correctAnswerIndexField.getItems().add(3);
-        
-        difficultyField.getItems().add("Easy");
-        difficultyField.getItems().add("Medium");
-        difficultyField.getItems().add("Hard");
-        
+        correctAnswerIndexField = new ComboBox<>();
+        correctAnswerIndexField.getItems().addAll(0, 1, 2, 3);
+
+        difficultyField = new ComboBox<>();
+        difficultyField.getItems().addAll("Easy", "Medium", "Hard");
+
         addGrid.add(new Label("Question Text:"), 0, 0);
         addGrid.add(questionTextField, 1, 0);
         addGrid.add(new Label("Option 1:"), 0, 1);
@@ -124,183 +135,211 @@ public class manageQuestions extends Application {
         return addGrid;
     }
 
-    private VBox createEditSection(GridPane addGrid) {
+    /**
+     * Creates the section for editing an existing question.
+     */
+    private VBox createEditSection() {
         Label editLabel = new Label("Edit Question");
         editComboBox = new ComboBox<>();
         editComboBox.setOnAction(e -> loadQuestionForEdit());
+
         Button editButton = new Button("Edit Question");
         editButton.setOnAction(e -> editQuestion());
-        return new VBox(10, editLabel, editComboBox, addGrid, editButton);
-    }
-    
 
+        return new VBox(10, editLabel, editComboBox, editButton);
+    }
+
+    /**
+     * Creates the section for deleting an existing question.
+     */
     private VBox createDeleteSection() {
         Label deleteLabel = new Label("Delete Question");
         deleteComboBox = new ComboBox<>();
         Button deleteButton = new Button("Delete Question");
         deleteButton.setOnAction(e -> deleteQuestion());
+
         return new VBox(10, deleteLabel, deleteComboBox, deleteButton);
     }
+
+    /**
+     * Loads questions from the JSON file using manual parsing.
+     */
     private List<Question> loadQuestions() {
-        try (BufferedReader reader = new BufferedReader(new FileReader("src/View/questions.json"))) {
-            StringBuilder json = new StringBuilder();
+        List<Question> questionList = new ArrayList<>();
+        File file = new File(QUESTIONS_FILE);
+        if (!file.exists()) {
+            System.err.println("Questions file not found: " + QUESTIONS_FILE);
+            return questionList;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            StringBuilder jsonContent = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
-                json.append(line);
+                jsonContent.append(line);
             }
-            return parseQuestions(json.toString());
+
+            String json = jsonContent.toString();
+            questionList = parseQuestions(json);
         } catch (IOException e) {
-            return new ArrayList<>();
+            System.err.println("Failed to load questions: " + e.getMessage());
         }
+
+        return questionList;
     }
 
+    /**
+     * Parses the JSON string to extract Question objects manually.
+     */
     private List<Question> parseQuestions(String json) {
         List<Question> questionList = new ArrayList<>();
         if (json == null || json.isEmpty()) return questionList;
 
         try {
-            // Extract questions array
-            int startIndex = json.indexOf("\"questions\":");
-            if (startIndex == -1) return questionList;
-            
-            json = json.substring(json.indexOf("[", startIndex), json.lastIndexOf("]") + 1);
-            
-            // Split into individual question objects
-            String[] entries = json.split("(?<=}),\\s*(?=\\{)");
-            
-            for (String entry : entries) {
-                entry = entry.trim().replaceAll("^\\[?\\{|\\}\\]?$", "");
-                
-                // Extract values using more robust methods
-                String questionText = extractJsonValue(entry, "questionText");
-                String[] options = extractJsonArray(entry, "options");
-                String correctAnswerStr = extractJsonValue(entry, "correctAnswerIndex");
-                String difficulty = extractJsonValue(entry, "difficulty");
-                
-                // Parse correct answer index with validation
-                int correctAnswerIndex = 0;
-                if (correctAnswerStr != null && !correctAnswerStr.isEmpty()) {
-                    correctAnswerIndex = Integer.parseInt(correctAnswerStr);
-                }
-                
-                if (questionText != null && options != null && difficulty != null) {
+            // Split the JSON string to extract question objects
+            String[] questionBlocks = json.split("\\{");
+
+            for (String block : questionBlocks) {
+                if (block.contains("questionText")) {
+                    // Extract questionText
+                    String questionText = extractValue(block, "questionText");
+
+                    // Extract options array
+                    String optionsBlock = block.split("\"options\":\\s*\\[")[1].split("\\]")[0];
+                    String[] options = optionsBlock.split("\",");
+                    for (int i = 0; i < options.length; i++) {
+                        options[i] = options[i].replace("\"", "").trim();
+                    }
+
+                    // Extract correctAnswerIndex
+                    String correctAnswerIndexStr = extractValue(block, "correctAnswerIndex");
+                    int correctAnswerIndex = 0;
+                    try {
+                        correctAnswerIndex = Integer.parseInt(correctAnswerIndexStr);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Invalid correctAnswerIndex: " + correctAnswerIndexStr);
+                        continue; // Skip this question
+                    }
+
+                    // Extract difficulty
+                    String difficulty = extractValue(block, "difficulty");
+
+                    // Add question to the list
                     questionList.add(new Question(questionText, options, correctAnswerIndex, difficulty));
                 }
             }
         } catch (Exception e) {
             System.err.println("Error parsing questions: " + e.getMessage());
         }
-        
+
         return questionList;
     }
 
-    private String[] extractJsonArray(String json, String key) {
-        String pattern = "\"" + key + "\"\\s*:\\s*\\[(.*?)\\]";
-        java.util.regex.Pattern r = java.util.regex.Pattern.compile(pattern, java.util.regex.Pattern.DOTALL);
-        java.util.regex.Matcher m = r.matcher(json);
-
-        if (m.find()) {
-            String arrayContent = m.group(1);
-            String[] elements = arrayContent.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-            String[] result = new String[4];
-
-            for (int i = 0; i < 4 && i < elements.length; i++) {
-                // Trim spaces, remove quotes, and unescape characters
-                result[i] = elements[i].trim()
-                                       .replaceAll("^\"|\"$", "") // Remove surrounding quotes
-                                       .replace("\\", "");        // Remove backslashes
+    /**
+     * Extracts a string or numeric value for a given key from a JSON object block using split.
+     */
+    private String extractValue(String block, String key) {
+        try {
+            String[] parts = block.split("\"" + key + "\"\\s*:\\s*");
+            if (parts.length < 2) return null;
+            String valuePart = parts[1];
+            // Now, valuePart starts with either a quote or a number
+            String value;
+            if (valuePart.startsWith("\"")) {
+                // String value
+                int endQuoteIndex = valuePart.indexOf("\"", 1);
+                if (endQuoteIndex == -1) return null;
+                value = valuePart.substring(1, endQuoteIndex);
+            } else {
+                // Numeric value
+                int commaIndex = valuePart.indexOf(",");
+                if (commaIndex == -1) {
+                    // Last field, maybe closing brace
+                    int endBraceIndex = valuePart.indexOf("}");
+                    if (endBraceIndex == -1) {
+                        value = valuePart.trim();
+                    } else {
+                        value = valuePart.substring(0, endBraceIndex).trim();
+                    }
+                } else {
+                    value = valuePart.substring(0, commaIndex).trim();
+                }
             }
-            return result;
+            return value;
+        } catch (Exception e) {
+            System.err.println("Failed to extract value for key " + key + ": " + e.getMessage());
+            return null;
         }
-        return null;
     }
 
-
-
-    private String extractJsonValue(String json, String key) {
-        String pattern = "\"" + key + "\"\\s*:\\s*\"?([^\"\\},]+)\"?";
-        java.util.regex.Pattern r = java.util.regex.Pattern.compile(pattern);
-        java.util.regex.Matcher m = r.matcher(json);
-        return m.find() ? m.group(1).trim() : null;
-    }
-    
-    private String[] parseOptions(String optionsStr) {
-        String[] options = new String[4];
-        if (optionsStr != null) {
-            String[] optionParts = optionsStr.substring(optionsStr.indexOf("[") + 1, optionsStr.lastIndexOf("]"))
-                                             .split("\\s*,\\s*");
-            for (int i = 0; i < 4 && i < optionParts.length; i++) {
-                // Remove surrounding quotes and unescape slashes
-                options[i] = optionParts[i].replaceAll("^\"|\"$", "").replace("\\", "").trim();
-            }
-        }
-        return options;
-    }
-
-
-
-    private String findPart(String[] parts, String key) {
-        for (String part : parts) {
-            if (part.contains("\"" + key + "\"")) {
-                return part;
-            }
-        }
-        return null;
-    }
-
-    private String extractValue(String part, String key) {
-        if (part == null) return "";
-        int startIndex = part.indexOf("\":") + 2;
-        String value = part.substring(startIndex).trim();
-        return value.replaceAll("^\"|\"$", "").trim();
-    }
-
+    /**
+     * Saves the current list of questions to the JSON file using manual serialization.
+     */
     private void saveQuestions() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("src/View/questions.json"))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(QUESTIONS_FILE))) {
             writer.write(questionsToJson());
+            showAlert(Alert.AlertType.INFORMATION, "Success", "Questions saved successfully.");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to save questions: " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Error", "Failed to save questions.");
         }
     }
 
+    /**
+     * Converts the list of questions to a JSON string manually.
+     */
     private String questionsToJson() {
-        StringBuilder json = new StringBuilder("{\n  \"questions\": [\n");
+        StringBuilder json = new StringBuilder("[\n");
         for (int i = 0; i < questions.size(); i++) {
             Question q = questions.get(i);
-            json.append("    {\n")
-                .append("      \"questionText\": \"").append(q.getQuestionText().replace("\"", "\\\"")).append("\",\n")
-                .append("      \"options\": [\n");
-            
-            String[] options = q.getOptions();
-            for (int j = 0; j < options.length; j++) {
-                json.append("        \"").append(options[j].replace("\"", "\\\"")).append("\"")
-                    .append(j < options.length - 1 ? ",\n" : "\n");
-            }
-            
-            json.append("      ],\n")
-                .append("      \"correctAnswerIndex\": ").append(q.getCorrectAnswerIndex()).append(",\n")
-                .append("      \"difficulty\": \"").append(q.getDifficulty().replace("\"", "\\\"")).append("\"\n")
-                .append("    }").append(i < questions.size() - 1 ? ",\n" : "\n");
+            json.append("  {\n")
+                .append("    \"questionText\": \"").append(escapeJson(q.getQuestionText())).append("\",\n")
+                .append("    \"options\": [\n")
+                .append("      \"").append(escapeJson(q.getOptions()[0])).append("\",\n")
+                .append("      \"").append(escapeJson(q.getOptions()[1])).append("\",\n")
+                .append("      \"").append(escapeJson(q.getOptions()[2])).append("\",\n")
+                .append("      \"").append(escapeJson(q.getOptions()[3])).append("\"\n")
+                .append("    ],\n")
+                .append("    \"correctAnswerIndex\": ").append(q.getCorrectAnswerIndex()).append(",\n")
+                .append("    \"difficulty\": \"").append(escapeJson(q.getDifficulty())).append("\"\n")
+                .append("  }")
+                .append(i < questions.size() - 1 ? ",\n" : "\n");
         }
-        json.append("  ]\n}");
+        json.append("]");
         return json.toString();
     }
 
+    /**
+     * Escapes special characters in JSON strings.
+     */
+    private String escapeJson(String str) {
+        return str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+    }
+
+    /**
+     * Adds a new question based on the form fields.
+     */
     private void addQuestion() {
         if (!validateFields()) return;
-        
+
         try {
-            int index = (int) correctAnswerIndexField.getValue();
+            int index = correctAnswerIndexField.getValue();
             if (index < 0 || index > 3) throw new NumberFormatException();
-            
-            questions.add(new Question(
-                questionTextField.getText(),
-                new String[]{option1Field.getText(), option2Field.getText(), 
-                            option3Field.getText(), option4Field.getText()},
-                index,
-                difficultyField.getValue().toString()
-            ));
-            
+
+            // Create a new Question object and add to the list
+            Question newQuestion = new Question(
+                    questionTextField.getText(),
+                    new String[]{
+                            option1Field.getText(),
+                            option2Field.getText(),
+                            option3Field.getText(),
+                            option4Field.getText()
+                    },
+                    index,
+                    difficultyField.getValue()
+            );
+
+            questions.add(newQuestion);
             saveQuestions();
             showAlert(Alert.AlertType.INFORMATION, "Success", "Question added successfully.");
             updateComboBoxes();
@@ -310,36 +349,48 @@ public class manageQuestions extends Application {
         }
     }
 
+    /**
+     * Validates that all form fields are filled.
+     */
     private boolean validateFields() {
-        if (questionTextField.getText().isEmpty() || option1Field.getText().isEmpty() || 
-            option2Field.getText().isEmpty() || option3Field.getText().isEmpty() || 
-            option4Field.getText().isEmpty() || correctAnswerIndexField.getValue()==null || 
-            difficultyField.getValue()==null) {
+        if (questionTextField.getText().isEmpty()
+                || option1Field.getText().isEmpty()
+                || option2Field.getText().isEmpty()
+                || option3Field.getText().isEmpty()
+                || option4Field.getText().isEmpty()
+                || correctAnswerIndexField.getValue() == null
+                || difficultyField.getValue() == null) {
+
             showAlert(Alert.AlertType.ERROR, "Error", "All fields must be filled.");
             return false;
         }
         return true;
     }
 
+    /**
+     * Loads a selected question's details into the form for editing.
+     */
     private void loadQuestionForEdit() {
         String selected = editComboBox.getValue();
         if (selected == null) return;
 
-        questions.stream()
-                .filter(q -> q.getQuestionText().equals(selected))
-                .findFirst()
-                .ifPresent(q -> {
-                    questionTextField.setText(q.getQuestionText());
-                    String[] options = q.getOptions();
-                    option1Field.setText(options[0]);
-                    option2Field.setText(options[1]);
-                    option3Field.setText(options[2]);
-                    option4Field.setText(options[3]);
-                    correctAnswerIndexField.setValue(q.getCorrectAnswerIndex());
-                    difficultyField.setValue(q.getDifficulty().toString());
-                });
+        for (Question q : questions) {
+            if (q.getQuestionText().equals(selected)) {
+                questionTextField.setText(q.getQuestionText());
+                option1Field.setText(q.getOptions()[0]);
+                option2Field.setText(q.getOptions()[1]);
+                option3Field.setText(q.getOptions()[2]);
+                option4Field.setText(q.getOptions()[3]);
+                correctAnswerIndexField.setValue(q.getCorrectAnswerIndex());
+                difficultyField.setValue(q.getDifficulty());
+                break;
+            }
+        }
     }
 
+    /**
+     * Edits the selected question with the current form values.
+     */
     private void editQuestion() {
         String selected = editComboBox.getValue();
         if (selected == null) {
@@ -350,19 +401,23 @@ public class manageQuestions extends Application {
         if (!validateFields()) return;
 
         try {
-            int index = (int) correctAnswerIndexField.getValue();
+            int index = correctAnswerIndexField.getValue();
             if (index < 0 || index > 3) throw new NumberFormatException();
 
-            questions.stream()
-                    .filter(q -> q.getQuestionText().equals(selected))
-                    .findFirst()
-                    .ifPresent(q -> {
-                        q.setQuestionText(questionTextField.getText());
-                        q.setOptions(new String[]{option1Field.getText(), option2Field.getText(),
-                                                option3Field.getText(), option4Field.getText()});
-                        q.setCorrectAnswerIndex(index);
-                        q.setDifficulty(difficultyField.getValue().toString());
+            for (Question q : questions) {
+                if (q.getQuestionText().equals(selected)) {
+                    q.setQuestionText(questionTextField.getText());
+                    q.setOptions(new String[]{
+                            option1Field.getText(),
+                            option2Field.getText(),
+                            option3Field.getText(),
+                            option4Field.getText()
                     });
+                    q.setCorrectAnswerIndex(index);
+                    q.setDifficulty(difficultyField.getValue());
+                    break;
+                }
+            }
 
             saveQuestions();
             showAlert(Alert.AlertType.INFORMATION, "Success", "Question edited successfully.");
@@ -372,6 +427,9 @@ public class manageQuestions extends Application {
         }
     }
 
+    /**
+     * Deletes the selected question from the list.
+     */
     private void deleteQuestion() {
         String selected = deleteComboBox.getValue();
         if (selected == null) {
@@ -379,21 +437,31 @@ public class manageQuestions extends Application {
             return;
         }
 
-        questions.removeIf(q -> q.getQuestionText().equals(selected));
-        saveQuestions();
-        showAlert(Alert.AlertType.INFORMATION, "Success", "Question deleted successfully.");
-        updateComboBoxes();
+        boolean removed = questions.removeIf(q -> q.getQuestionText().equals(selected));
+        if (removed) {
+            saveQuestions();
+            showAlert(Alert.AlertType.INFORMATION, "Success", "Question deleted successfully.");
+            updateComboBoxes();
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Error", "Failed to delete the question.");
+        }
     }
 
+    /**
+     * Updates the edit and delete combo boxes with the current list of questions.
+     */
     private void updateComboBoxes() {
         editComboBox.getItems().clear();
         deleteComboBox.getItems().clear();
-        questions.forEach(q -> {
+        for (Question q : questions) {
             editComboBox.getItems().add(q.getQuestionText());
             deleteComboBox.getItems().add(q.getQuestionText());
-        });
+        }
     }
 
+    /**
+     * Clears all form fields.
+     */
     private void clearFields() {
         questionTextField.clear();
         option1Field.clear();
@@ -404,13 +472,14 @@ public class manageQuestions extends Application {
         difficultyField.setValue(null);
     }
 
+    /**
+     * Displays an alert dialog.
+     */
     private void showAlert(Alert.AlertType type, String title, String message) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
+        alert.setHeaderText(null); // Optional: Remove header
         alert.setContentText(message);
         alert.showAndWait();
     }
-    
-   
 }
-
