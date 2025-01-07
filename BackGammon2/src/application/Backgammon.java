@@ -2,7 +2,13 @@ package application;
 
 import java.util.Random;
 
-import javafx.animation.AnimationTimer;
+import Control.GamePlay;
+import View.Firstlayer;
+import View.Login;
+import View.QuestionScreen;
+import View.SecondLayer;
+import View.SurprisePopUp;
+import View.WhoStarts;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -19,38 +25,46 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import Control.GamePlay;
-import Model.Pawns;
-import Model.SysData;
-import View.Firstlayer;
-import View.Login;
-import View.QuestionScreen;
-import View.SecondLayer;
-import View.SurprisePopUp;
-import View.WhoStarts;
 
+/**
+ * Main Backgammon class. Calls GamePlay for board logic and
+ * sets up UI. Dice in Hard mode can be -3..6 (negative means move backward).
+ */
 public class Backgammon extends Application {
 
-	public static int secondsElapsed = 0; // Counter for seconds
-	private static Timeline timeline;
-    private String difficulty;
-    public static boolean startingPlayer;
-    private boolean surprisePlayed =GamePlay.surprisePlayed;
-    private int counter=0;
+    public static int secondsElapsed = 0;
+    private static Timeline timeline;
+    
+
+    private String difficulty = "Easy"; // default
+    public static boolean startingPlayer = true; // who starts (true = player1)
+
     Label timerLabel = new Label("Time: 0s");
     public static GamePlay theGame;
-    public static int dice1;
-    public static int dice2;
+    private static Label one = new Label("?");
+    private static Label two = new Label("?");
+    
+    public static Label getOne() {
+    	return one;
+    }
+    
+    public static Label getTwo() {
+    	return two;
+    }
+    
     @Override
     public void start(Stage primaryStage) {
-   
-    	startTimer();
-        //-------------------STATEMENTS-------------------------------------
+        System.out.println("ENTERING START METHOD (difficulty=" + difficulty + ")");
+
+        startTimer();
+
+        // Create the main Pane
         Pane pane = new Pane();
         Firstlayer first = new Firstlayer(primaryStage);
         pane.getChildren().addAll(first.getBoard());
 
-        GridPane[] gridCols = new GridPane[30];
+        // Build GridPane array for 24 columns
+        GridPane[] gridCols = new GridPane[24];
         for (int i = 0; i < 12; i++) {
             SecondLayer up = new SecondLayer();
             gridCols[i] = up.setLayoutUp(i);
@@ -62,66 +76,53 @@ public class Backgammon extends Application {
             pane.getChildren().add(gridCols[i]);
         }
 
-        //GamePlay theGame = new GamePlay(gridCols, primaryStage, difficulty);
+        // Create the GamePlay logic
         theGame = new GamePlay(gridCols, primaryStage, difficulty);
 
-        
+        // Determine who starts via WhoStarts screen (dice)
         WhoStarts whoStartsScreen = new WhoStarts();
         startingPlayer = whoStartsScreen.determineStartingPlayer(primaryStage);
-        String startingPlayerName =" ";
-        if(startingPlayer)
-        {
-        	startingPlayerName = Login.player1;
-        }
-        	
-        else
-        	startingPlayerName = Login.player2;
-        
-        // Step 2: Proceed to the game with the determined starting player
-        System.out.println("Starting Player: " + startingPlayerName);
 
-        // Initialize the game board with the starting player
-        
-        initializeGame(primaryStage, startingPlayerName);
-        
+        // Figure out actual names or fallback
+        String p1Name = (Login.player1 == null || Login.player1.trim().isEmpty())
+                ? "Player1" : Login.player1;
+        String p2Name = (Login.player2 == null || Login.player2.trim().isEmpty())
+                ? "Player2" : Login.player2;
+
+        String starter = startingPlayer ? p1Name : p2Name;
+        System.out.println("Starting Player: " + starter);
+
+        initializeGame(primaryStage, starter);
+
+        // Timer label
         timerLabel.setFont(Font.font(null, FontWeight.BOLD, 18));
         timerLabel.setStyle("-fx-text-fill: white;");
-        timerLabel.setLayoutX(950); // Positioned at the top-right
+        timerLabel.setLayoutX(950);
         timerLabel.setLayoutY(0);
         timerLabel.setPrefSize(150, 30);
         pane.getChildren().add(timerLabel);
 
-        //-------------------BUTTON AND LABEL-------------------------------------
-        Button dices = new Button("Roll Dice 🎲");
-        dices.setLayoutX(10); // Positioned at the left edge
-        dices.setLayoutY(5); 
-        dices.setPrefSize(150, 30);
-        dices.setStyle("-fx-background-color: #4CAF50; " +   // Green background
-                       "-fx-text-fill: white; " +            // White text
-                       "-fx-font-size: 14px; " +             // Font size
-                       "-fx-background-radius: 10; " +      // Rounded corners
-                       "-fx-font-weight: bold;");           // Bold font
+        // Dice button
+        Button diceBtn = new Button("Roll Dice 🎲");
+        diceBtn.setLayoutX(10);
+        diceBtn.setLayoutY(5);
+        diceBtn.setPrefSize(150, 30);
+        diceBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; "
+                + "-fx-font-size: 14px; -fx-background-radius: 10; -fx-font-weight: bold;");
 
-        // Drop shadow effect
         DropShadow shadow = new DropShadow();
         shadow.setColor(Color.GRAY);
         shadow.setRadius(10);
-        dices.setEffect(shadow);
+        diceBtn.setEffect(shadow);
 
-        // Hover effect for button
-        dices.setOnMouseEntered(e -> dices.setStyle("-fx-background-color: #45A049; " + 
-                                                   "-fx-text-fill: white; " + 
-                                                   "-fx-font-size: 14px; " +
-                                                   "-fx-background-radius: 10; " +
-                                                   "-fx-font-weight: bold;"));
-        dices.setOnMouseExited(e -> dices.setStyle("-fx-background-color: #4CAF50; " + 
-                                                  "-fx-text-fill: white; " + 
-                                                  "-fx-font-size: 14px; " +
-                                                  "-fx-background-radius: 10; " +
-                                                  "-fx-font-weight: bold;"));
+        diceBtn.setOnMouseEntered(e -> diceBtn.setStyle("-fx-background-color: #45A049; -fx-text-fill: white; "
+                + "-fx-font-size: 14px; -fx-background-radius: 10; -fx-font-weight: bold;"));
+        diceBtn.setOnMouseExited(e -> diceBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; "
+                + "-fx-font-size: 14px; -fx-background-radius: 10; -fx-font-weight: bold;"));
 
-        Label one = new Label("?");
-        Label two = new Label("?");
+        // Dice result labels
+        //Label one = new Label("?");
+        //Label two = new Label("?");
         one.setFont(Font.font(null, FontWeight.BOLD, 72));
         two.setFont(Font.font(null, FontWeight.BOLD, 72));
 
@@ -132,63 +133,45 @@ public class Backgammon extends Application {
         two.setLayoutY(290);
         two.setStyle("-fx-text-fill: white;");
 
-        dices.setOnAction(new EventHandler<ActionEvent>() {
-           // boolean player = false;
-
+        // On dice click
+        diceBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                theGame.setTimes(2);
-                QuestionScreen.bool = false;
-                if(!difficulty.equals("Easy"))
-                	rollQuestionDice();
-                
-                Random rand = new Random();
+                System.out.println("Dice roll button clicked!");
 
-                int diceOne = rand.nextInt(6) + 1;
-                int diceTwo = rand.nextInt(6) + 1;
+                int dice1 = rollDice(difficulty);
+                int dice2 = rollDice(difficulty);
 
-                dice1 = diceOne;
-                dice2 = diceTwo;
-                
-                one.setText(String.valueOf(diceOne));
-                two.setText(String.valueOf(diceTwo));
-                String player1 = Login.player1;
-                String player2 = Login.player2;
-                if(GamePlay.surprisePlayed&&counter==0)
-                {
-  
-            		if(startingPlayer)
-            			startingPlayer = false;
-            		else
-            			startingPlayer = true;
-                	counter++;
-                	
-                }
+                System.out.println("Dice One: " + dice1);
+                System.out.println("Dice Two: " + dice2);
+
+                one.setText(String.valueOf(dice1));
+                two.setText(String.valueOf(dice2));
+
                 if (startingPlayer) {
-                	
-                    if (diceOne == diceTwo) theGame.setTimes(4);
+                    // If doubles => times=4
+                    if (dice1 == dice2) theGame.setTimes(4);
                     startingPlayer = false;
-                    dices.setText(player2 +"'s Turn 🎲");
+                    diceBtn.setText(p2Name + "'s Turn 🎲");
                     theGame.reset();
-                    theGame.bluePlays(gridCols, diceOne, diceTwo);
-                    
+                    theGame.bluePlays(gridCols, dice1, dice2);
                 } else {
-                    if (diceOne == diceTwo) theGame.setTimes(4);
+                    if (dice1 == dice2) theGame.setTimes(4);
                     startingPlayer = true;
-                    dices.setText(player1 + "'s Turn 🎲");
+                    diceBtn.setText(p1Name + "'s Turn 🎲");
                     theGame.reset();
-                    theGame.blackPlays(gridCols, diceOne, diceTwo);
-                   
+                    theGame.blackPlays(gridCols, dice1, dice2);
                 }
             }
         });
-        placeQuestionMarks(gridCols,pane);
-        placeSurprise(gridCols,pane);
 
-        //-------------------SCENE AND STAGE-------------------------------------
-        pane.getChildren().addAll(dices, one, two);
+        // Place question/surprise visuals
+        placeQuestionMarks(gridCols, pane);
+        placeSurprise(gridCols, pane);
 
-        Scene scene = new Scene(pane, 1100, 800); // Fixed screen size
+        pane.getChildren().addAll(diceBtn, one, two);
+
+        Scene scene = new Scene(pane, 1100, 800);
         primaryStage.setTitle("Backgammon");
         primaryStage.setScene(scene);
         primaryStage.setMaxHeight(800);
@@ -196,130 +179,96 @@ public class Backgammon extends Application {
         primaryStage.setMinHeight(800);
         primaryStage.setMinWidth(1100);
         primaryStage.setResizable(false);
-
         primaryStage.show();
     }
-    public void rollQuestionDice()
-    {
+
+    /**
+     * rollDice with Hard mode = -3..6 (no re-roll).
+     */
+    private static final int[] HARD_DICE_VALUES = {-3, -2, -1, 1, 2, 3, 4, 5, 6};
+    public static int rollDice(String difficulty) {
     	Random rand = new Random();
-                int num = rand.nextInt(3)+1;
-                String questiondifficulty ="";
-                switch(num)
-                {
-                case 1:
-             	   questiondifficulty = "Easy"; 
-             	   break;
-                case 2:
-             	   questiondifficulty = "Medium";
-             	   break;
-                case 3:
-             	   questiondifficulty = "Hard";
-             	   break;
-                default : break;
-                }
-                
-                QuestionScreen questionLevel = new QuestionScreen();
-                questionLevel.show(GamePlay.mainStage, questiondifficulty,"game");
-        
+        if ("Hard".equalsIgnoreCase(difficulty)) {
+            // Select a random index from the HARD_DICE_VALUES array
+            int index = rand.nextInt(HARD_DICE_VALUES.length);
+            int rolledValue = HARD_DICE_VALUES[index];
+            System.out.println("Hard difficulty roll: " + rolledValue);
+            return rolledValue;
+        } else {
+            // Standard die roll: 1 to 6
+            int rolledValue = rand.nextInt(6) + 1;
+            System.out.println("Standard difficulty roll: " + rolledValue);
+            return rolledValue;
+        }
     }
-    private void placeSurprise(GridPane[] gridCols, Pane parentPane) {
-    	Label surprise = new Label("🎁");
-    	surprise.setFont(Font.font(null, FontWeight.BOLD, 60));
-    	surprise.setStyle("-fx-text-fill: purple;");
-    	 int gridIndex =GamePlay.surprise;
-         double layoutX = secondLayer.cols[gridIndex];
-         double layoutY;
 
-         if (gridIndex < 12) {
-             layoutY = 10; // Top row
-         } else {
-             layoutY = 630; // Bottom row 
-         }
-
-         // Explicitly set the layout
-         surprise.setLayoutX(layoutX);
-         surprise.setLayoutY(layoutY);
-
-         // Add the label to the parent Pane
-         parentPane.getChildren().add(surprise);
-		
-	}
-	private final SecondLayer secondLayer = new SecondLayer();
-
-    int[] questions = GamePlay.getQuestions();
+    // Place question marks
+    private final SecondLayer secondLayer = new SecondLayer();
     public void placeQuestionMarks(GridPane[] gridCols, Pane parentPane) {
-        for (int i = 0; i < questions.length; i++) {
-            if (questions[i] != -1) {
-                // Create a question mark label
-                Label questionMark = new Label("?");
-                questionMark.setFont(Font.font(null, FontWeight.BOLD, 72));
-                questionMark.setStyle("-fx-text-fill: purple;");
+        int[] questions = GamePlay.getQuestions();
+        for (int spot : questions) {
+            if (spot != -1) {
+                Label qm = new Label("?");
+                qm.setFont(Font.font(null, FontWeight.BOLD, 72));
+                qm.setStyle("-fx-text-fill: purple;");
 
-                // Determine layout based on the column and row
-                int gridIndex = questions[i];
-                double layoutX = secondLayer.cols[gridIndex];
-                double layoutY;
+                double layoutX = secondLayer.cols[spot];
+                double layoutY = (spot < 12) ? 10 : 630;
+                qm.setLayoutX(layoutX);
+                qm.setLayoutY(layoutY);
 
-                if (gridIndex < 12) {
-                    layoutY = 10; // Top row
-                } else {
-                    layoutY = 630; // Bottom row 
-                }
-
-                // Explicitly set the layout
-                questionMark.setLayoutX(layoutX);
-                questionMark.setLayoutY(layoutY);
-
-                // Add the label to the parent Pane
-                parentPane.getChildren().add(questionMark);
+                parentPane.getChildren().add(qm);
             }
         }
+    }
+
+    // Place surprise
+    public void placeSurprise(GridPane[] gridCols, Pane parentPane) {
+        Label surprise = new Label("🎁");
+        surprise.setFont(Font.font(null, FontWeight.BOLD, 60));
+        surprise.setStyle("-fx-text-fill: purple;");
+
+        int gridIndex = GamePlay.surprise;
+        double layoutX = secondLayer.cols[gridIndex];
+        double layoutY = (gridIndex < 12) ? 10 : 630;
+
+        surprise.setLayoutX(layoutX);
+        surprise.setLayoutY(layoutY);
+
+        parentPane.getChildren().add(surprise);
+        
     }
 
     public void startTimer() {
-        // Create a KeyFrame that executes every second
         KeyFrame keyFrame = new KeyFrame(Duration.seconds(1), e -> {
             secondsElapsed++;
-            int minutes = secondsElapsed / 60; // Calculate minutes
-            int seconds = secondsElapsed % 60; // Calculate remaining seconds
-            if(seconds<10)
-            {
-            	 if(minutes<10)
-                     timerLabel.setText(String.format("Time: 0%d : 0%d", minutes, seconds)); // Update the Label
-                 else
-                 	timerLabel.setText(String.format("Time: %d : 0%d", minutes, seconds)); // Update the Label
+            int mins = secondsElapsed / 60;
+            int secs = secondsElapsed % 60;
+            if (mins < 10 && secs < 10) {
+                timerLabel.setText(String.format("Time: 0%d : 0%d", mins, secs));
+            } else if (mins < 10) {
+                timerLabel.setText(String.format("Time: 0%d : %d", mins, secs));
+            } else if (secs < 10) {
+                timerLabel.setText(String.format("Time: %d : 0%d", mins, secs));
+            } else {
+                timerLabel.setText(String.format("Time: %d : %d", mins, secs));
             }
-            else
-            {
-            	if(minutes<10)
-                    timerLabel.setText(String.format("Time: 0%d : %d", minutes, seconds)); // Update the Label
-                else
-                	timerLabel.setText(String.format("Time: %d : %d", minutes, seconds)); // Update the Label
-            }
-            
         });
-
-        // Initialize the Timeline with the KeyFrame
         timeline = new Timeline(keyFrame);
-
-        // Set the cycle count to indefinite to keep the timer running
         timeline.setCycleCount(Timeline.INDEFINITE);
-
-        // Start the timer
         timeline.play();
     }
+
     public static void stopTimer() {
         if (timeline != null) {
-            timeline.stop(); // Stop the timer
+            timeline.stop();
             System.out.println("Final elapsed time: " + secondsElapsed + " seconds");
         }
     }
-private void initializeGame(Stage primaryStage, String startingPlayer) {
-        // Your existing game initialization logic here
-        System.out.println("Initializing game with starting player: " + startingPlayer);
 
-        // Placeholder for game setup
-        primaryStage.setTitle("Backgammon - Player " + startingPlayer + " starts!");
+    private void initializeGame(Stage primaryStage, String starterName) {
+        System.out.println("Initializing game with starting player: " + starterName);
+        primaryStage.setTitle("Backgammon - " + starterName + " starts!");
         primaryStage.show();
     }
 
@@ -328,6 +277,12 @@ private void initializeGame(Stage primaryStage, String startingPlayer) {
     }
 
     public void setDifficulty(String selectedDifficulty) {
-        this.difficulty = selectedDifficulty;
+        if (selectedDifficulty != null && !selectedDifficulty.trim().isEmpty()) {
+            this.difficulty = selectedDifficulty;
+        }
+    }
+    
+    public String getDifficulty() {
+    	return difficulty;
     }
 }

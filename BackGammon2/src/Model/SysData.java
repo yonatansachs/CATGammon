@@ -14,8 +14,8 @@ public class SysData {
     private static SysData instance;
     private static List<Question> questions;
     private final List<GameRecord> history; // List to store game history
-    private final String QUESTIONS_FILE = "questions.json";
-    private final String HISTORY_FILE = "game_history.json";
+    private final String QUESTIONS_FILE = "src/View/questions.json";
+    private final String HISTORY_FILE = "src/View/game_history.json";
 
     private SysData() {
         questions = new ArrayList<>();

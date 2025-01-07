@@ -1,0 +1,78 @@
+[
+{
+"player1": "Yonatan",
+"player2": "Matan",
+"winner": "Yonatan",
+"difficulty": "Easy",
+"duration": "174 seconds"
+},
+{
+"player1": "Yonatan",
+"player2": "Gal",
+"winner": "Yonatan",
+"difficulty": "Easy",
+"duration": "188 seconds"
+}
+,{
+"player1": "Ofek",
+"player2": "Matan",
+"winner": "Matan",
+"difficulty": "Easy",
+"duration": "142 seconds"
+}
+,{
+"player1": "Matan",
+"player2": "Gal",
+"winner": "Matan",
+"difficulty": "Easy",
+"duration": "216 seconds"
+}
+,
+{
+"player1":"Matan",
+"player2":"Yonatan",
+"winner":"Yonatan",
+"difficulty":"Easy",
+"duration":"98 seconds"
+}
+,
+{
+"player1":"Ronaldo",
+"player2":"Messi",
+"winner":"Ronaldo",
+"difficulty":"Easy",
+"duration":"329 seconds"
+}
+,
+{
+"player1":"1",
+"player2":"2",
+"winner":"2",
+"difficulty":"Easy",
+"duration":"86 seconds"
+}
+,
+{
+"player1":"1",
+"player2":"2",
+"winner":"2",
+"difficulty":"Hard",
+"duration":"655 seconds"
+}
+,
+{
+"player1":"Matan",
+"player2":"Ofek",
+"winner":"Ofek",
+"difficulty":"Easy",
+"duration":"112 seconds"
+}
+,
+  {
+    "player1":"Matan",
+    "player2":"Gal",
+    "winner":"Gal",
+    "difficulty":"Medium",
+    "duration":"92 seconds"
+  }
+]

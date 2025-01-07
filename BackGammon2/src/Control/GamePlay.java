@@ -1,1587 +1,1322 @@
 package Control;
 
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-
-import javax.swing.text.Element;
-import javafx.scene.image.ImageView;
-
 import Model.Pawns;
 import View.Login;
 import View.QuestionScreen;
-import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
-import javafx.geometry.Pos;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.input.MouseEvent;
+import View.SurprisePopUp;
+import application.Backgammon;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
-import javafx.scene.image.Image;
-import javafx.scene.layout.GridPane;
-import application.Backgammon;
-import View.SurprisePopUp;
-public class GamePlay extends Pawns{
-    
-	public static String difficulty;
-	private Stage b;
+import javafx.util.Duration;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+
+import java.awt.Label;
+import java.io.*;
+import java.util.*;
+
+/**
+ * GamePlay class that:
+ *   1) Asks a question each turn if difficulty == "Hard".
+ *   2) Forces re-entry of eaten pawns before any other moves.
+ *   3) Supports negative dice, capturing single pawns, etc.
+ *   4) When a pawn is clicked, only the remaining valid dice will be available as options.
+ */
+public class GamePlay extends Pawns {
+
+    public static String difficulty;
+    private Stage mainStage;
     private final Pawns pawn = new Pawns();
-    private final int[] blueUp = new int[30];
-    private final int[] blueDown = new int[30];
-    private final int[] blackUp = new int[30];
-    private final int[] blackDown = new int[30];
-    private int outBlue = 0;
+    
+    // Introduce separate extra turn flags for Blue and Black
+    private boolean blueExtraTurnGranted = false;
+    private boolean blackExtraTurnGranted = false;
+
+    // Pawns in each column (0..23)
+    private final int[] blueUp   = new int[24];
+    private final int[] blueDown = new int[24];
+    private final int[] blackUp  = new int[24];
+    private final int[] blackDown= new int[24];
+
+    // Over-5 stacks
+    private final int[] sevenNum = new int[24];
+
+    // How many pawns are "out" / eaten
+    private int outBlue  = 0;
     private int outBlack = 0;
-    private int times = 2;
-    private int countDice = 1;
-    private int[] sevenNum = new int[30];
-    public static Stage mainStage;
-    private int counter =0;
-    private static final String HISTORY_FILE = "game_history.json";
 
-    //private int surpriseSpot = -1;
-    public static int [] questions = {-1,-1,-1};
-    public static int surprise =-1;
-    public static boolean surprisePlayed =false;
+    // Normally 2 moves, or 4 if doubles
+    private int times = 2;    
+    private int countDice = 1; 
 
-    public GamePlay(GridPane[] setP, Stage a, String difficulty) {
-    	this.difficulty = difficulty;
-        b = a;
+    // Some booleans from your original code
+    private boolean played = true;
+    private boolean workIt = true;
 
-        for (int i = 0; i < sevenNum.length; i++) {
+    private int surpriseCounter = 0;
+
+    // Surprise / question data
+    public static boolean surprisePlayed = false;
+    public static int[] questions = { -1, -1, -1 };
+    public static int   surprise  = -1;
+
+    private static final String HISTORY_FILE = "src/View/game_history.json";
+
+    // List to hold remaining dice for the current turn
+    private List<Integer> availableDice;
+
+    public GamePlay(GridPane[] boardCols, Stage stage, String difficulty) {
+        GamePlay.difficulty = difficulty;
+        mainStage = stage;
+
+        // Initialize arrays
+        for(int i=0; i<24; i++){
+            blueUp[i]   = 0;
+            blueDown[i] = 0;
+            blackUp[i]  = 0;
+            blackDown[i]= 0;
             sevenNum[i] = 0;
         }
-        for (int i = 0; i < blueUp.length; i++) {
-            blueUp[i] = 0;
+
+        Set<Integer> used = new HashSet<>();
+        Random rand = new Random();
+        // Random question spots
+        for(int i=0; i<3; i++){
+            questions[i] = selectRandomSpot(rand);
+            while(used.contains(questions[i])){
+                questions[i] = selectRandomSpot(rand);
+            }
+            used.add(questions[i]);
+            System.out.println("Question spot selected: " + questions[i]);
         }
-        for (int i = 0; i < blackUp.length; i++) {
-            blackUp[i] = 0;
+        // Random surprise
+        surprise = selectRandomSpot(rand);
+        while(used.contains(surprise)){
+            surprise = selectRandomSpot(rand);
         }
-        for (int i = 0; i < blueDown.length; i++) {
-            blueDown[i] = 0;
-        }
-        for (int i = 0; i < blackDown.length; i++) {
-            blackDown[i] = 0;
-        }
-        Set<Integer> usedPositions = new HashSet<>(); // Track already used positions
-        // Randomly choose a spot
-        for(int i=0;i<3;i++)
-         {
-        	//surpriseSpot = selectRandomSpot();
-        	questions[i] = selectRandomSpot();
-        	while(usedPositions.contains(questions[i]))
-        		questions[i] = selectRandomSpot();
-        	usedPositions.add(questions[i]);
-        	
-            System.out.println("Surprise spot selected: " + questions[i]);
-        } 
-          
-        surprise = selectRandomSpot();
-        while(usedPositions.contains(surprise))
-        {
-        	surprise = selectRandomSpot();	  
-         }
-        	  
-          
+        System.out.println("Surprise spot selected: " + surprise);
+
+        initializePawns(boardCols);
+    }
+
+    private int selectRandomSpot(Random rand){
+        return rand.nextInt(24); 
+    }
+
+    /**
+     * Basic initial layout (similar to your code).
+     */
+    private void initializePawns(GridPane[] cols){
+        // Example arrangement:
+        setDown(cols, 18, 1, true);
+        setDown(cols, 18, 1, true);
+        setDown(cols, 18, 1, true);
+        setDown(cols, 18, 1, true);
+        setDown(cols, 18, 1, true);
+
+        setDown(cols, 16, 1, true);
+        setDown(cols, 16, 1, true);
+        setDown(cols, 16, 1, true);
+
+        setUp(cols, 11, 1, true);
+        setUp(cols, 11, 1, true);
+        setUp(cols, 11, 1, true);
+        setUp(cols, 11, 1, true);
+        setUp(cols, 11, 1, true);
+
+        setUp(cols, 0, 1, true);
+        setUp(cols, 0, 1, true);
+
+        setDown(cols, 23, 1, false);
+        setDown(cols, 23, 1, false);
+
+        setDown(cols, 12, 1, false);
+        setDown(cols, 12, 1, false);
+        setDown(cols, 12, 1, false);
+        setDown(cols, 12, 1, false);
+        setDown(cols, 12, 1, false);
+
+        setUp(cols, 7, 1, false);
+        setUp(cols, 7, 1, false);
+        setUp(cols, 7, 1, false);
+
+        setUp(cols, 5, 1, false);
+        setUp(cols, 5, 1, false);
+        setUp(cols, 5, 1, false);
+        setUp(cols, 5, 1, false);
+        setUp(cols, 5, 1, false);
+    }
+
+    public void bluePlays(GridPane[] board, int dOne, int dTwo) {
+        // Store current starting player
+        boolean wasStartingPlayer = Backgammon.startingPlayer;
+        promptQuestionEachTurn("turn");
         
+        if (wasStartingPlayer != Backgammon.startingPlayer) return;
+
+        availableDice = new ArrayList<>();
+        availableDice.add(dOne);
+        availableDice.add(dTwo);
+
+        if (Math.abs(dOne) == Math.abs(dTwo)) {
+            availableDice.add(dOne);
+            availableDice.add(dTwo);
+            setTimes(4);
+        } else {
+            setTimes(2);
+        }
+
+        if (outBlue > 0) {
+            reEnterBluePawns(board);
+            return;
+        }
+
+        if (blueGameOver()) {
+            endGame(Login.player1, "BLUE");
+            return;
+        }
         
-        initializePawns(setP);
-    }
-    
-    private void handleSurpriseSpot(GridPane[] grid, int column) {
-    	if(column == surprise)
-    	{
-    		surprisePlayed = true;
-    		
-    	}
-		
-	}
+        reset();
+        highlightAllBlue(board);
 
-	public static int[] getQuestions() {
-		return questions;
-	}
-
-	public void setQuestions(int[] surprise) {
-		this.questions = surprise;
-	}
-	
-	public void handleQuestionSpot(GridPane[] grid, int column) {
-		Random rand = new Random();
-       
-		for(int i=0;i<3;i++)
-       {
-    	   if (column == questions[i]) {
-               int num = rand.nextInt(3)+1;
-               String questiondifficulty ="";
-               switch(num)
-               {
-               case 1:
-            	   questiondifficulty = "Easy"; 
-            	   break;
-               case 2:
-            	   questiondifficulty = "Medium";
-            	   break;
-               case 3:
-            	   questiondifficulty = "Hard";
-            	   break;
-               default : break;
-               }
-               
-               QuestionScreen questionLevel = new QuestionScreen();
-               questionLevel.show(mainStage, questiondifficulty,"spot");
-           }
-       }
-    	
-    }
-	
-	
-	
-	
-	////////////////////////////////////////////////////////
-	private void handleSurprise(GridPane[] grid, int column) {
-	    	   if (!surprisePlayed && column == surprise) {
-	               System.out.println("Surprise spot reached!");
-	              //anotherTurn logic implementation
-	               surprisePlayed = true;
-	           }
-	    	   
-	       }
-	    	
-	    
-	///////////////////////////////////////////////////////
-
-
-    private void initializePawns(GridPane[] setP) {
-        setDown(setP, 18, 1, true);
-        setDown(setP, 18, 1, true);
-        setDown(setP, 18, 1, true);
-        setDown(setP, 18, 1, true);
-        setDown(setP, 18, 1, true);
-
-        setDown(setP, 16, 1, true);
-        setDown(setP, 16, 1, true);
-        setDown(setP, 16, 1, true);
-
-        setUp(setP, 11, 1, true);
-        setUp(setP, 11, 1, true);
-        setUp(setP, 11, 1, true);
-        setUp(setP, 11, 1, true);
-        setUp(setP, 11, 1, true);
-
-        setUp(setP, 0, 1, true);
-        setUp(setP, 0, 1, true);
-
-        setDown(setP, 23, 1, false);
-        setDown(setP, 23, 1, false);
-
-        setDown(setP, 12, 1, false);
-        setDown(setP, 12, 1, false);
-        setDown(setP, 12, 1, false);
-        setDown(setP, 12, 1, false);
-        setDown(setP, 12, 1, false);
-
-        setUp(setP, 7, 1, false);
-        setUp(setP, 7, 1, false);
-        setUp(setP, 7, 1, false);
-
-        setUp(setP, 5, 1, false);
-        setUp(setP, 5, 1, false);
-        setUp(setP, 5, 1, false);
-        setUp(setP, 5, 1, false);
-        setUp(setP, 5, 1, false);
-    }
-
-    private int selectRandomSpot() {
-        Random random = new Random();
-        return random.nextInt(24); // Randomly choose between 0 and 23
+        if (!blueExtraTurnGranted) {
+            Backgammon.startingPlayer = false;
+        } else {
+            blueExtraTurnGranted = false;
+            System.out.println("Blue player gets an extra turn.");
+            Backgammon.startingPlayer = true;
+            // Next dice roll will trigger another blue turn automatically
+            // since startingPlayer remains true
+        }
     }
 
 
 
-    
-    public void setUp(GridPane[] col,int column,int howMany,boolean color){
-        
-        int[] oneBlue=oneBlue();
-        int[] oneBlack=oneBlack();
 
-        int contains=howManyContains(col,column);
-        
-        if(contains>5){ sevenNum[column]++; }
-        
-        if(sevenNum[column]>0){
+    // ============ RE-ENTER BLUE PAWNS ============
+    private void reEnterBluePawns(GridPane[] board){
+        // Clear highlights
+        clearHighlights(board);
 
-        Label title = new Label(Integer.toString(sevenNum[column]+6));
-        title.setMaxWidth(Double.MAX_VALUE);
-        title.setAlignment(Pos.CENTER);
-        title.setStyle("-fx-text-fill: white;"+
-                       "-fx-font-family: \"Times New Roman\";" +
-                       "-fx-font-style: italic;" +
-                       "-fx-font-size: 45px;"
-                       );
+        // Determine valid dice for re-entry (only positive dice for Blue re-entry)
+        List<Integer> validDice = new ArrayList<>();
+        for(Integer die : availableDice){
+            if(die > 0 && isValidReEntryDieForBlue(die)){
+                validDice.add(die);
+            }
+        }
 
-        col[column].add(pawn.createPawn(color), 0,5);
-        col[column].add(title,0,5);
-        
-        if(color){  blueUp[column]+=1;  }
-        
-        else{   blackUp[column]+=1; }
-        
-        }else{
-        
-            if(color){
-                
-                    if( (oneBlack[column]==1)){
-                            removeUp(col,column,false);
-                            col[column].add(pawn.createPawn(color), 0, contains-1);
-                            outBlack++;
-                    }else{
-   
-                    col[column].add(pawn.createPawn(color), 0, contains);
+        if(validDice.isEmpty()){
+            // No valid dice to re-enter, end turn immediately since we can't proceed
+            showAlert("No Re-entry Available", 
+                "No valid dice to re-enter Blue pawns. Your turn ends as you must re-enter all pawns before making other moves.");
+            resetTurn();
+            Backgammon.startingPlayer = false; // Switch to Black
+            return;  // End turn immediately
+        }
+
+        // Highlight valid re-entry spots based on validDice
+        for(Integer die : validDice){
+            int targetCol = die - 1; // die=1 maps to col=0, etc.
+            if(targetCol >= 0 && targetCol < 6 && isValidCaptureOrStackForBlue(targetCol)){
+                board[targetCol].setStyle("-fx-border-color:red;");
+                final int usedDie = die;
+                final int finalToCol = targetCol;
+                board[targetCol].setOnMouseClicked(e->{
+                    // Perform re-entry
+                    outBlue--;
+                    useDie(usedDie);
                     
-                    }
-
-                    blueUp[column]+=1;
-            
-            }else{
-
-                    if( (oneBlue[column]==1)){
-
-                        removeUp(col,column,true);
-                        col[column].add(pawn.createPawn(color), 0, contains-1);
-                        outBlue++;
-                    
-                    }else{
-
-                        col[column].add(pawn.createPawn(color), 0, contains);
-                    }
-
-                   blackUp[column]+=1;
-                }
-        }
-    }
-    
-    public void setDown(GridPane[] col,int colNumber,int howMany,boolean color){
-    
-        int[] oneBlue=oneBlue();
-        int[] oneBlack=oneBlack();
-        int contains = howManyContains(col,colNumber);
-
-        int put=5-contains;
-
-        if(contains>5){ sevenNum[colNumber]++;  }
-        
-        if(sevenNum[colNumber]>0){
-
-            Label title = new Label(Integer.toString(sevenNum[colNumber]+6));
-            title.setMaxWidth(Double.MAX_VALUE);
-            title.setAlignment(Pos.CENTER);
-            title.setStyle("-fx-text-fill: white;"+
-                           "-fx-font-family: \"Times New Roman\";" +
-                           "-fx-font-style: italic;" +
-                           "-fx-font-size: 45px;"
-                           );
-
-            col[colNumber].add(pawn.createPawn(color), 0,0);
-            col[colNumber].add(title,0,0);
-        
-            if(color){  blueDown[colNumber]+=1;   }
-            else{   blackDown[colNumber]+=1;    }
-        
-        }else{
-            
-            if(color){
-
-                    if( (oneBlack[colNumber]==1)){
-                        removeDown(col,colNumber,false);
-                        col[colNumber].add(pawn.createPawn(color), 0, put+1);
+                    // If exactly one black, capture it
+                    if(gatherBlack()[finalToCol] == 1){
+                        if(finalToCol < 12) removeUp(board, finalToCol, false);
+                        else removeDown(board, finalToCol, false);
                         outBlack++;
-                    }else{
-
-                    col[colNumber].add(pawn.createPawn(color), 0, put);
                     }
-                                        
-                    blueDown[colNumber]+=1;
-            
-            }else{
+                    
+                    // Place Blue
+                    if(finalToCol < 12) setUp(board, finalToCol, 1, true);
+                    else setDown(board, finalToCol, 1, true);
 
-                    if( (oneBlue[colNumber]==1)){
+                    handleQuestionSpot(board, finalToCol);
+                    handleSurpriseSpot(board, finalToCol, true); // Pass isBlue=true
 
-                        removeDown(col,colNumber,true);
-                        col[colNumber].add(pawn.createPawn(color), 0, put+1);
+                    // If we still have pawns to re-enter but no more dice, end turn
+                    if(outBlue > 0 && availableDice.isEmpty()){
+                        showAlert("Turn Ended", 
+                            "You have no more dice to re-enter remaining pawns. Your turn ends as you must re-enter all pawns before making other moves.");
+                        resetTurn();
+                        Backgammon.startingPlayer = false; // Switch to Black
+                        return;
+                    }
+                    
+                    // If still have pawns to re-enter, continue re-entering
+                    if(outBlue > 0){
+                        reEnterBluePawns(board);
+                    }
+                    else{
+                        // Only allow normal moves if ALL pawns are re-entered
+                        highlightAllBlue(board);
+                    }
+                });
+            }
+        }
+    }
+
+    // After re-enter, highlight normal pawns for second (third, fourth) move
+    private void highlightAllBlue(GridPane[] board) {
+        clearHighlights(board);
+
+        if (canBlueBearOff()) {
+            highlightBlueBearingOff(board); // Highlight bearing-off options
+            return;
+        }
+
+        int[] blues = gatherBlue();
+        boolean hasValidMoves = false;
+
+        for (int col = 0; col < 24; col++) {
+            if (blues[col] > 0) {
+                List<Integer> validDice = getValidDiceForBlue(col);
+                if (!validDice.isEmpty()) {
+                    hasValidMoves = true;
+                    board[col].setStyle("-fx-border-color:pink;");
+                    final int chosen = col;
+                    board[col].setOnMouseClicked(e -> handleBluePawnClick(board, chosen));
+                }
+            }
+        }
+
+        if (!hasValidMoves) {
+            showAlert("No Moves Available", "No valid moves available for Blue.");
+            resetTurn();
+            Backgammon.startingPlayer = false; // Switch to Black
+        }
+    }
+
+
+
+
+    // Handle Blue pawn click
+    private void handleBluePawnClick(GridPane[] board, int col){
+        // Clear all highlights
+        clearHighlights(board);
+
+        // Determine which dice can be used to move this pawn
+        List<Integer> validDice = getValidDiceForBlue(col);
+
+        if(validDice.isEmpty()){
+            showAlert("No Valid Dice", "No valid dice available to move this pawn.");
+            highlightAllBlue(board);
+            return;
+        }
+
+        // Highlight target columns based on validDice
+        for(Integer die : validDice){
+            int toCol = col + die;
+            // Handle negative dice (moving backward)
+            if(die < 0){
+                toCol = col + die; // Move backward
+            }
+            else{
+                toCol = col + die; // Move forward
+            }
+
+            if(toCol < 0 || toCol >=24){
+                // Invalid move, skip
+                continue;
+            }
+
+            if(isValidCaptureOrStackForBlue(toCol)){
+                board[toCol].setStyle("-fx-border-color:yellow;");
+                final int usedDie = die;
+                final int finalToCol = toCol; // Make toCol effectively final
+                board[toCol].setOnMouseClicked(ev->{
+                    moveBlue(board, col, finalToCol, usedDie);
+                });
+            }
+        }
+    }
+
+    // Get valid dice for moving Blue pawn from a column
+    private List<Integer> getValidDiceForBlue(int fromCol){
+        List<Integer> validDice = new ArrayList<>();
+        for(Integer die : availableDice){
+            int toCol = fromCol + die;
+            // Handle negative dice
+            if(die < 0){
+                toCol = fromCol + die;
+            }
+            else{
+                toCol = fromCol + die;
+            }
+
+            // Ensure the move is within bounds
+            if(toCol >=0 && toCol <24 && isValidCaptureOrStackForBlue(toCol)){
+                validDice.add(die);
+            }
+        }
+        return validDice;
+    }
+
+    // Actually move a Blue pawn from fromCol to toCol using usedDie
+    private void moveBlue(GridPane[] board, int fromCol, int toCol, int usedDie){
+        // Clear highlights
+        clearHighlights(board);
+        // Remove Blue pawn from the original column
+        if(fromCol <12){
+            removeUp(board, fromCol, true);
+        }
+        else{
+            removeDown(board, fromCol, true);
+        }
+
+        // Capture if exactly 1 black pawn is present
+        if(gatherBlack()[toCol] ==1 ){
+            if(toCol <12){
+                removeUp(board, toCol, false);
+            }
+            else{
+                removeDown(board, toCol, false);
+            }
+            outBlack++;
+        }
+
+        // Place Blue pawn on the target column
+        if(toCol <12){
+            setUp(board, toCol, 1, true);
+        }
+        else{
+            setDown(board, toCol, 1, true);
+        }
+
+        // Handle special spots
+        handleQuestionSpot(board, toCol);
+        handleSurpriseSpot(board, toCol, true); // Pass isBlue=true
+
+        // Remove the used die from availableDice
+        useDie(usedDie);
+
+        // Check if all dice are used
+        if(availableDice.isEmpty()){
+            if(blueGameOver()){
+                endGame(Login.player1, "BLUE");
+                return;
+            }
+            resetTurn();
+            return;
+        }
+
+        // If still out pawns, re-enter
+        if(outBlue >0){
+            reEnterBluePawns(board);
+        }
+        else{
+            highlightAllBlue(board);
+        }
+    }
+
+    // ============ BLACK TURN ============
+    public void blackPlays(GridPane[] board, int dOne, int dTwo) {
+        boolean wasStartingPlayer = Backgammon.startingPlayer;
+        promptQuestionEachTurn("turn");
+        
+        if (wasStartingPlayer != Backgammon.startingPlayer) return;
+
+        availableDice = new ArrayList<>();
+        availableDice.add(dOne);
+        availableDice.add(dTwo);
+
+        if (Math.abs(dOne) == Math.abs(dTwo)) {
+            availableDice.add(dOne);
+            availableDice.add(dTwo);
+            setTimes(4);
+        } else {
+            setTimes(2);
+        }
+
+        if (outBlack > 0) {
+            reEnterBlackPawns(board);
+            return;
+        }
+
+        if (blackGameOver()) {
+            endGame(Login.player2, "BLACK");
+            return;
+        }
+        
+        reset();
+        highlightAllBlack(board);
+
+        if (!blackExtraTurnGranted) {
+            Backgammon.startingPlayer = true;
+        } else {
+            blackExtraTurnGranted = false;
+            System.out.println("Black player gets an extra turn.");
+            Backgammon.startingPlayer = false;
+            // Next dice roll will trigger another black turn automatically
+            // since startingPlayer remains false
+        }
+    }
+
+
+
+
+    private void reEnterBlackPawns(GridPane[] board){
+        // Clear highlights
+        clearHighlights(board);
+
+        // Determine valid dice for re-entry (only positive dice for Black re-entry)
+        List<Integer> validDice = new ArrayList<>();
+        for(Integer die : availableDice){
+            if(die > 0 && isValidReEntryDieForBlack(die)){
+                validDice.add(die);
+            }
+        }
+
+        if(validDice.isEmpty()){
+            // No valid dice to re-enter, end turn immediately since we can't proceed
+            showAlert("No Re-entry Available", 
+                "No valid dice to re-enter Black pawns. Your turn ends as you must re-enter all pawns before making other moves.");
+            resetTurn();
+            Backgammon.startingPlayer = true; // Switch to Blue
+            return;  // End turn immediately
+        }
+
+        // Highlight valid re-entry spots based on validDice
+        for(Integer die : validDice){
+            int targetCol = 24 - die; // Correct mapping for Black
+            if(targetCol >= 18 && targetCol < 24 && isValidCaptureOrStackForBlack(targetCol)){
+                board[targetCol].setStyle("-fx-border-color:red;");
+                final int usedDie = die;
+                final int finalToCol = targetCol;
+                board[targetCol].setOnMouseClicked(e->{
+                    // Perform re-entry
+                    outBlack--;
+                    useDie(usedDie);
+                    
+                    // If exactly one blue, capture it
+                    if(gatherBlue()[finalToCol] == 1){
+                        if(finalToCol < 12) removeUp(board, finalToCol, true);
+                        else removeDown(board, finalToCol, true);
                         outBlue++;
-                    
-                    }else{
-                    
-                        col[colNumber].add(pawn.createPawn(color), 0, put);
-                    
                     }
                     
-                    blackDown[colNumber]+=1;
+                    // Place Black
+                    if(finalToCol < 12){
+                        setUp(board, finalToCol, 1, false);
+                    }
+                    else{
+                        setDown(board, finalToCol, 1, false);
+                    }
+
+                    handleQuestionSpot(board, finalToCol);
+                    handleSurpriseSpot(board, finalToCol, false); // Pass isBlue=false
+
+                    // If we still have pawns to re-enter but no more dice, end turn
+                    if(outBlack > 0 && availableDice.isEmpty()){
+                        showAlert("Turn Ended", 
+                            "You have no more dice to re-enter remaining pawns. Your turn ends as you must re-enter all pawns before making other moves.");
+                        resetTurn();
+                        Backgammon.startingPlayer = true; // Switch to Blue
+                        return;
+                    }
+                    
+                    // If still have pawns to re-enter, continue re-entering
+                    if(outBlack > 0){
+                        reEnterBlackPawns(board);
+                    }
+                    else{
+                        // Only allow normal moves if ALL pawns are re-entered
+                        highlightAllBlack(board);
+                    }
+                });
             }
-        }//if-else
+        }
     }
 
-    public void removeUp(GridPane[] col,int colNumber,boolean color){
-        
-        if(sevenNum[colNumber]>0){
-            
-        sevenNum[colNumber]-=1;
-        
-        Label title = new Label(Integer.toString(sevenNum[colNumber]+6));
-        title.setMaxWidth(Double.MAX_VALUE);
-        title.setAlignment(Pos.CENTER);
-        title.setStyle("-fx-text-fill: white;"+
-                       "-fx-font-family: \"Times New Roman\";" +
-                       "-fx-font-style: italic;" +
-                       "-fx-font-size: 45px;"
-                       );
+    // After re-enter, highlight normal pawns for second (third, fourth) move
+    private void highlightAllBlack(GridPane[] board) {
+        clearHighlights(board);
 
-        col[colNumber].add(pawn.createPawn(color), 0,5);
-        
-        if(sevenNum[colNumber]>0){
-            col[colNumber].add(title,0,5);
+        if (canBlackBearOff()) {
+            highlightBlackBearingOff(board); // Highlight bearing-off options
+            return;
         }
-            if(sevenNum[colNumber]==0){
-            col[colNumber].getChildren().clear();
-            for(int k=0;k<6;k++){col[colNumber].add(pawn.createPawn(color), 0,k);}
-            }
-        }
-        else{
-        int contains=howManyContains(col,colNumber);    
-        col[colNumber].getChildren().remove(contains-1);
-        }
-        if(color){
-                
-            blueUp[colNumber]-=1;
-        }
-        else{
-        blackUp[colNumber]-=1; 
-        }
-    }
-    public void removeDown(GridPane[] col,int colNumber,boolean color){
-    if(sevenNum[colNumber]>0){
-            
-        sevenNum[colNumber]-=1;
-        
-        Label title = new Label(Integer.toString(sevenNum[colNumber]+6));
-        title.setMaxWidth(Double.MAX_VALUE);
-        title.setAlignment(Pos.CENTER);
-        title.setStyle("-fx-text-fill: white;"+
-                       "-fx-font-family: \"Times New Roman\";" +
-                       "-fx-font-style: italic;" +
-                       "-fx-font-size: 45px;"
-                       );
 
-        col[colNumber].add(pawn.createPawn(color), 0,0);
-        
-        if(sevenNum[colNumber]>0){
-            col[colNumber].add(title,0,0);
-        }
-            if(sevenNum[colNumber]==0){
-            col[colNumber].getChildren().clear();
-            for(int k=5;k>-1;k--){col[colNumber].add(pawn.createPawn(color), 0,k);}
-            }
-        }
-        else{
-        int contains=howManyContains(col,colNumber);
+        int[] blacks = gatherBlack();
+        boolean hasValidMoves = false;
 
-        col[colNumber].getChildren().remove(contains-1);
-        }
-    if(color){
-                
-                    blueDown[colNumber]-=1;
+        for (int col = 0; col < 24; col++) {
+            if (blacks[col] > 0) {
+                List<Integer> validDice = getValidDiceForBlack(col);
+                if (!validDice.isEmpty()) {
+                    hasValidMoves = true;
+                    board[col].setStyle("-fx-border-color:green;");
+                    final int chosen = col;
+                    board[col].setOnMouseClicked(e -> handleBlackPawnClick(board, chosen));
                 }
-                else{
-                
-                   blackDown[colNumber]-=1;
-                
-                }
-    
-    }
-    
-    public int howManyContains(GridPane[] grid,int column){
-    
-        int counter=0; 
-        
-        ObservableList<Node> childrens = grid[column].getChildren();
-
-        for(Node node : childrens) {
-        
-            if(node instanceof Circle)
-            counter++;
+            }
         }
+
+        if (!hasValidMoves) {
+            showAlert("No Moves Available", "No valid moves available for Black.");
+            resetTurn();
+            Backgammon.startingPlayer = true; // Switch to Blue
+        }
+    }
+
+
+
+    // Handle Black pawn click
+    private void handleBlackPawnClick(GridPane[] board, int col){
+        // Clear all highlights
+        clearHighlights(board);
+
+        // Determine which dice can be used to move this pawn
+        List<Integer> validDice = getValidDiceForBlack(col);
+
+        if(validDice.isEmpty()){
+            showAlert("No Valid Dice", "No valid dice available to move this pawn.");
+            highlightAllBlack(board);
+            return;
+        }
+
+        // Highlight target columns based on validDice
+        for(Integer die : validDice){
+            int toCol = col - die;
+            // Handle negative dice (moving backward)
+            if(die < 0){
+                toCol = col - die; // Move backward (which is forward for Black)
+            }
+            else{
+                toCol = col - die; // Move forward
+            }
+
+            if(toCol < 0 || toCol >=24){
+                // Invalid move, skip
+                continue;
+            }
+
+            if(isValidCaptureOrStackForBlack(toCol)){
+                board[toCol].setStyle("-fx-border-color:yellow;");
+                final int usedDie = die;
+                final int finalToCol = toCol; // Make toCol effectively final
+                board[toCol].setOnMouseClicked(ev->{
+                    moveBlack(board, col, finalToCol, usedDie);
+                });
+            }
+        }
+    }
+
+    // Get valid dice for moving Black pawn from a column
+    private List<Integer> getValidDiceForBlack(int fromCol){
+        List<Integer> validDice = new ArrayList<>();
+        for(Integer die : availableDice){
+            int toCol = fromCol - die;
+            // Handle negative dice
+            if(die < 0){
+                toCol = fromCol - die; // Move backward (which is forward for Black)
+            }
+            else{
+                toCol = fromCol - die; // Move forward
+            }
+
+            // Ensure the move is within bounds
+            if(toCol >=0 && toCol <24 && isValidCaptureOrStackForBlack(toCol)){
+                validDice.add(die);
+            }
+        }
+        return validDice;
+    }
+
+    // Actually move a Black pawn from fromCol to toCol using usedDie
+    private void moveBlack(GridPane[] board, int fromCol, int toCol, int usedDie){
+        // Clear highlights
+        clearHighlights(board);
         
-        if(sevenNum[column]>0){return sevenNum[column]+6;}
-        
+        // Remove Black pawn from the original column
+        if(fromCol <12){
+            removeUp(board, fromCol, false);
+        }
+        else{
+            removeDown(board, fromCol, false);
+        }
+
+        // Capture if exactly 1 blue pawn is present
+        if(gatherBlue()[toCol] ==1 ){
+            if(toCol <12){
+                removeUp(board, toCol, true);
+            }
+            else{
+                removeDown(board, toCol, true);
+            }
+            outBlue++;
+        }
+
+        // Place Black pawn on the target column
+        if(toCol <12){
+            setUp(board, toCol, 1, false);
+        }
+        else{
+            setDown(board, toCol, 1, false);
+        }
+
+        // Handle special spots
+        handleQuestionSpot(board, toCol);
+        handleSurpriseSpot(board, toCol, false);
+
+        // Remove the used die from availableDice
+        useDie(usedDie);
+
+        // Check if all dice are used
+        if(availableDice.isEmpty()){
+            if(blackGameOver()){
+                endGame(Login.player2, "BLACK");
+                return;
+            }
+            resetTurn();
+            return;
+        }
+
+        // If still out pawns, re-enter
+        if(outBlack >0){
+            reEnterBlackPawns(board);
+        }
+        else{
+            highlightAllBlack(board);
+        }
+    }
+
+    // --------------------------------------------------------------------------------
+    // Helper Methods for Re-entry and Capturing
+    // --------------------------------------------------------------------------------
+
+    /**
+     * Checks if a target column is a valid capture or stack for Blue.
+     *
+     * @param col The target column.
+     * @return True if valid, else False.
+     */
+    private boolean isValidCaptureOrStackForBlue(int col){
+        int blacks = gatherBlack()[col];
+        int blues  = gatherBlue()[col];
+        // valid if 0 or 1 black, or any number of blue
+        return (blacks <=1) || (blues >0);
+    }
+
+    /**
+     * Checks if a target column is a valid capture or stack for Black.
+     *
+     * @param col The target column.
+     * @return True if valid, else False.
+     */
+    private boolean isValidCaptureOrStackForBlack(int col){
+        int blues  = gatherBlue()[col];
+        int blacks = gatherBlack()[col];
+        // valid if 0 or 1 blue, or any number of black
+        return (blues <=1) || (blacks >0);
+    }
+
+    /**
+     * Checks if a die is valid for re-entry for Blue.
+     *
+     * @param die The die value.
+     * @return True if valid, else False.
+     */
+    private boolean isValidReEntryDieForBlue(int die){
+        // Re-entry uses only positive dice
+        if(die <=0){
+            return false;
+        }
+        int targetCol = die -1;
+        if(targetCol <0 || targetCol >=6) return false;
+        return isValidCaptureOrStackForBlue(targetCol);
+    }
+
+    /**
+     * Checks if a die is valid for re-entry for Black.
+     *
+     * @param die The die value.
+     * @return True if valid, else False.
+     */
+    private boolean isValidReEntryDieForBlack(int die){
+        // Re-entry uses only positive dice
+        if(die <=0){
+            return false;
+        }
+        int targetCol = 24 - die;
+        if(targetCol <18 || targetCol >=24) return false;
+        return isValidCaptureOrStackForBlack(targetCol);
+    }
+
+    // --------------------------------------------------------------------------------
+    // Board arrays
+    // --------------------------------------------------------------------------------
+
+    /**
+     * Gathers the total number of Blue pawns in each column.
+     *
+     * @return An array representing Blue pawns count per column.
+     */
+    private int[] gatherBlue(){
+        int[] arr = new int[24];
+        for(int c=0; c<24; c++){
+            arr[c] = blueUp[c] + blueDown[c];
+        }
+        return arr;
+    }
+
+    /**
+     * Gathers the total number of Black pawns in each column.
+     *
+     * @return An array representing Black pawns count per column.
+     */
+    private int[] gatherBlack(){
+        int[] arr = new int[24];
+        for(int c=0; c<24; c++){
+            arr[c] = blackUp[c] + blackDown[c];
+        }
+        return arr;
+    }
+
+    /**
+     * Places a Blue pawn upwards in a column.
+     *
+     * @param columns The game board columns.
+     * @param col     The target column.
+     * @param howMany Number of pawns to place.
+     * @param isBlue  True if Blue, False otherwise.
+     */
+    public void setUp(GridPane[] columns, int col, int howMany, boolean isBlue) {
+        int contains = howManyContains(columns, col);
+        int put = Math.max(0, contains); // Ensure `put` is valid
+
+        if (sevenNum[col] > 0) {
+            sevenNum[col]--;
+        } else {
+            if (isBlue) {
+                blueUp[col] += howMany;
+                if (put >= 0) {
+                    columns[col].add(pawn.createPawn(true), 0, put);
+                }
+            } else {
+                blackUp[col] += howMany;
+                if (put >= 0) {
+                    columns[col].add(pawn.createPawn(false), 0, put);
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Places a Blue pawn downwards in a column.
+     *
+     * @param columns The game board columns.
+     * @param col     The target column.
+     * @param howMany Number of pawns to place.
+     * @param isBlue  True if Blue, False otherwise.
+     */
+    public void setDown(GridPane[] columns, int col, int howMany, boolean isBlue) {
+        int contains = howManyContains(columns, col);
+        int put = Math.max(0, 5 - contains); // Ensure `put` is not negative
+
+        if (sevenNum[col] > 0) {
+            sevenNum[col]--;
+            // Handle over-5 stacks if necessary
+        } else {
+            if (isBlue) {
+                blueDown[col] += howMany;
+                if (put >= 0) {
+                    columns[col].add(pawn.createPawn(true), 0, put);
+                }
+            } else {
+                blackDown[col] += howMany;
+                if (put >= 0) {
+                    columns[col].add(pawn.createPawn(false), 0, put);
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Removes a Blue pawn from upwards in a column.
+     *
+     * @param columns The game board columns.
+     * @param col     The column to remove from.
+     * @param isBlue  True if Blue, False otherwise.
+     */
+    public void removeUp(GridPane[] columns, int col, boolean isBlue){
+        if(sevenNum[col] >0){
+            sevenNum[col]--;
+        }
+        else{
+            int c = howManyContains(columns,col);
+            if(c >0){
+                columns[col].getChildren().remove(c-1);
+            }
+        }
+        if(isBlue) blueUp[col]--;
+        else       blackUp[col]--;
+    }
+
+    /**
+     * Removes a Blue pawn from downwards in a column.
+     *
+     * @param columns The game board columns.
+     * @param col     The column to remove from.
+     * @param isBlue  True if Blue, False otherwise.
+     */
+    public void removeDown(GridPane[] columns, int col, boolean isBlue){
+        if(sevenNum[col] >0){
+            sevenNum[col]--;
+        }
+        else{
+            int c = howManyContains(columns,col);
+            if(c >0){
+                columns[col].getChildren().remove(c-1);
+            }
+        }
+        if(isBlue) blueDown[col]--;
+        else       blackDown[col]--;
+    }
+
+    /**
+     * Counts how many pawns are present in a column.
+     *
+     * @param columns The game board columns.
+     * @param col     The column to count.
+     * @return The number of pawns in the column.
+     */
+    public int howManyContains(GridPane[] columns, int col){
+        int counter=0;
+        for(Node n : columns[col].getChildren()){
+            if(n instanceof Circle) counter++;
+        }
+        if(sevenNum[col]>0) return sevenNum[col]+6;
         return counter;
     }
 
-    public int[] getBlueUp(){
-    
-    return blueUp;
-    
-    }
-    
-    public int[] getBlueDown(){
-    
-    return blueDown;
-    
-    }
-    
-    public int[] getBlackUp(){
-    
-    return blackUp;
-    
-    }
-    
-    public int[] getBlackDown(){
-    
-    return blackDown;
-    
+    // --------------------------------------------------------------------------------
+    // Checking end of game
+    // --------------------------------------------------------------------------------
+    private boolean blueGameOver() {
+        for (int i = 0; i < 24; i++) {
+            if (blueUp[i] > 0 || blueDown[i] > 0) return false;
+        }
+        return outBlue == 0; // Check if no pawns are "out"
     }
 
-    public void playBlue(GridPane[] grid,int column,int a,int b){
-
-
-    	
-        int[] oneBlack = new int[30];
-        int[] blues = new int[30];
-        int[] empty = new int[30];
-        
-        oneBlack= oneBlack();
-        blues=whereBlue();
-        empty=emptyCols();
-        
-        for(int hh=0; hh<24; hh++){
-        
-            grid[hh].setOnMouseClicked(null);
-            grid[hh].setStyle(null);
-            
+    private boolean blackGameOver() {
+        for (int i = 0; i < 24; i++) {
+            if (blackUp[i] > 0 || blackDown[i] > 0) return false;
         }
-
-        if((column+a<24) && (column+b<24) ){
-        
-            if( (oneBlack[column+a] == 1) || (blues[column+a] !=0) || (empty[column+a]==1) ){
-            
-            grid[column+a].setStyle("-fx-border-color:yellow;");
-            grid[column+a].setOnMouseClicked(new EventHandler<MouseEvent>() {
-            
-            @Override
-            public void handle(MouseEvent e) {
-
-                blueMoves(grid,column,a);
-                
-                grid[column+a].setOnMouseClicked(null);
-                grid[column+b].setOnMouseClicked(null);
-                grid[column+a].setStyle(null);
-                grid[column+b].setStyle(null);
-
-
-                if(countDice<times){
-                
-                    bluePlays(grid,b,b);
-                
-                    countDice++;
-                }
-            }
-            });
-            
-            }
-        }
-        if((column+a<24) && (column+b<24) ){
-        
-            if( (oneBlack[column+b] == 1) ||(blues[column+b] !=0) || (empty[column+b]==1) ){
-            
-            grid[column+b].setStyle("-fx-border-color:yellow;");
-            grid[column+b].setOnMouseClicked(new EventHandler<MouseEvent>() {
-            
-            @Override
-            public void handle(MouseEvent e) {
-
-                blueMoves(grid,column,b);
-                
-                grid[column+a].setOnMouseClicked(null);
-                grid[column+b].setOnMouseClicked(null);
-                grid[column+a].setStyle(null);
-                grid[column+b].setStyle(null);
-                
-                if(countDice<times){
-                    
-                    countDice++;                
-                    bluePlays(grid,a,a);
-                }
-            }
-            });
-            
-            }
-        }
-    }
-    
-    public void blueMoves(GridPane[] grid, int column, int dice) {
-        if ((column < 12) && (column + dice < 12)) {
-            removeUp(grid, column, true);
-            setUp(grid, column + dice, 1, true);
-        } else if ((column < 12) && (column + dice >= 12)) {
-            removeUp(grid, column, true);
-            setDown(grid, column + dice, 1, true);
-        } else {
-            removeDown(grid, column, true);
-            setDown(grid, column + dice, 1, true);
-        }
-
-        // Checking if the pawn reached the spot
-        handleQuestionSpot(grid, column + dice);
-        handleSurpriseSpot(grid,column+dice);
-        
-        //check if pawn reached surprise spot
+        return outBlack == 0; // Check if no pawns are "out"
     }
 
-    private boolean played=true;
-    private boolean workIt=true;
-    public void takeIt(GridPane[] grid,int[] blue,int dice){
-    boolean biggest=false;
-    for(int a=18;a<24;a++){
-                
-                if( (a<24-dice) && (blue[a]!=0) ){
-                final int b=a;biggest=true;
-                    grid[a].setStyle("-fx-border-color:orange;");
-                    grid[a].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                    @Override
-                    public void handle(MouseEvent e) {
-                    removeDown(grid,b,true);
-                    setDown(grid,b+dice,1,true);
 
-
-                    for(int a=18;a<24;a++){
-                    
-                    grid[a].setOnMouseClicked(null);
-                    grid[a].setStyle(null);
-                    
-                    }
-                    
-                    }                
-                    });
-                }
-                else if( (a>24-dice) && (blue[a]!=0) && !biggest && (howManyContains(grid,a)>0) ){
-
-                    final int b=a;    
-                    grid[a].setStyle("-fx-border-color:orange;");
-                    grid[a].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                    @Override
-                    public void handle(MouseEvent e) {
-                    
-                        removeDown(grid,b,true);
-                       for(int a=18;a<24;a++){
-                    
-                    grid[a].setOnMouseClicked(null);
-                    grid[a].setStyle(null);
-                    
-                    }
-                        
-                    }                
-                    });
-                
-                }
-    }
-    }
-    public void takeItB(GridPane[] grid,int[] black,int dice){
-    boolean biggest=false;
-    for(int a=5;a>-1;a--){
-                
-                if( (a>dice-1) && (black[a]!=0) ){
-                final int b=a;biggest=true;
-                    grid[a].setStyle("-fx-border-color:orange;");
-                    grid[a].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                    @Override
-                    public void handle(MouseEvent e) {
-                    removeUp(grid,b,false);
-                    setUp(grid,b-dice,1,false);
-
-
-                    for(int a=5;a>-1;a--){
-                    
-                    grid[a].setOnMouseClicked(null);
-                    grid[a].setStyle(null);
-                    
-                    }
-                    
-                    }                
-                    });
-                }
-                else if( (a<dice-1) && (black[a]!=0) && !biggest && (howManyContains(grid,a)>0)){
-
-                    final int b=a;    
-                    grid[a].setStyle("-fx-border-color:orange;");
-                    grid[a].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                    @Override
-                    public void handle(MouseEvent e) {
-                    
-                        removeUp(grid,b,false);
-                       for(int a=5;a>-1;a--){
-                    
-                    grid[a].setOnMouseClicked(null);
-                    grid[a].setStyle(null);
-                    
-                    }
-                        
-                    }                
-                    });
-                
-                }
-    }
-    }
-    public void bluePlays(GridPane[] grid,int dOne,int dTwo){
-    	
-		if(surprisePlayed&&counter==0)
-        {
-			SurprisePopUp popup = new SurprisePopUp();
-    		popup.show(mainStage); // Replace 'primaryStage' with your main stage variable.
-        	//Backgammon.startingPlayer = true;
-        	counter++;
-        	
-        }
-        int[] blue=new int[30];
-        int[] oneBlack= new int[30];
-        int[] empty=new int[30];
-        
-        blue=whereBlue();
-        oneBlack=oneBlack();
-        empty=emptyCols();
-        
-        if(blueGameE(blue)){
-
-            try {
-                Backgammon.stopTimer();
-        		addGameToHistory(Login.player1,Login.player2,Login.player1,difficulty,Backgammon.secondsElapsed);
-
-                Stage stage=new Stage(); 
-                    
-                Group group = new Group();
-                Scene scene = new Scene(group, 500, 500, Color.BLUE);
-                stage.setTitle("BLUE WINS");
-                stage.setScene(scene);
-                stage.show();
-                b.close();
-    
-            } catch (Exception ex) {}
-
-        }
-        
-        if( blueEnds(blue) ){
-            
-            for(int x=18;x<24;x++){
-            
-            if( (blue[x]!=0) && (x+dOne<25 || x+dTwo<25) && countDice<times){
-                final int xx=x;workIt=false;
-                grid[xx].setStyle("-fx-border-color:red;");
-                grid[xx].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                @Override
-                public void handle(MouseEvent e) {
-                                        
-                grid[xx].setStyle(null);
-                grid[xx].setOnMouseClicked(null);
-
-                    if(xx+dOne<24){
-                        
-                                grid[xx+dOne].setStyle("-fx-border-color:yellow;");
-                                grid[xx+dOne].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    played=false;
-                                    removeDown(grid,xx,true);
-                                    setDown(grid,xx+dOne,1,true);
-
-                                    for(int off=18;off<24;off++){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                                    
-                                    if(countDice<times){
-                                        countDice++;workIt=true;
-                                        bluePlays(grid,dTwo,dTwo);
-                                        }
-                                    
-                                }                
-                                });
-                    }else if(xx+dOne==24 ){
-                        removeDown(grid,xx,true);
-                                played=false;
-                                    for(int off=18;off<24;off++){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                                    
-                                        if(countDice<times){
-                                        countDice++;workIt=true;
-                                        bluePlays(grid,dTwo,dTwo);
-                                        }
-                        
-                        
-                    }
-                    if(xx+dTwo<24 && played){
-                        
-                                grid[xx+dTwo].setStyle("-fx-border-color:yellow;");
-                                grid[xx+dTwo].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    
-                                                                                removeDown(grid,xx,true);
-                                        setDown(grid,xx+dTwo,1,true);
-                                        
-                                        for(int off=18;off<24;off++){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                        }
-
-                                        if(countDice<times){
-                                        countDice++;workIt=true;
-                                        bluePlays(grid,dOne,dOne);
-                                        }
-
-                                }                
-                                });
-                    }else if(xx+dTwo==24 && played){
-                        removeDown(grid,xx,true);
-                        
-                                    for(int off=18;off<24;off++){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                                      
-                                        if(countDice<times){
-                                        countDice++;workIt=true;
-                                        bluePlays(grid,dOne,dOne);
-                                        }
-                    }            
-                }                
-                });
-            }//if      
-            else if( (blue[x]!=0) && (x+dOne<25 || x+dTwo<25) ){
-            
-            final int xx=x;workIt=false;
-                grid[xx].setStyle("-fx-border-color:red;");
-                grid[xx].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                @Override
-                public void handle(MouseEvent e){
- 
-                grid[xx].setStyle(null);
-                grid[xx].setOnMouseClicked(null);
-
-                    if(xx+dOne<24){
-                        
-                                grid[xx+dOne].setStyle("-fx-border-color:yellow;");
-                                grid[xx+dOne].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    played=false;
-                                    removeDown(grid,xx,true);
-                                    setDown(grid,xx+dOne,1,true);
-
-                                    for(int off=18;off<24;off++){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-
-                                }                
-                                });
-                    }else if(xx+dOne==24 ){
-                        removeDown(grid,xx,true);
-                                played=false;
-                                    for(int off=18;off<24;off++){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                    }
-                    if(xx+dTwo<24 && played){
-                        
-                                grid[xx+dTwo].setStyle("-fx-border-color:yellow;");
-                                grid[xx+dTwo].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    
-                                        removeDown(grid,xx,true);
-                                        setDown(grid,xx+dTwo,1,true);
-                                        
-                                        for(int off=18;off<24;off++){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                        }
-
-                                }                
-                                });
-                    }else if(xx+dTwo==24 && played){
-                        removeDown(grid,xx,true);
-                        
-                                    for(int off=18;off<24;off++){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                    }            
-                }                
-                });
-            
-            }//else
-            else if( (blue[x]!=0) && ( ( x+dOne>24 ) || ( x+dTwo>24 ) ) && workIt){
-            
-            int xx=x;x=24;
-                                grid[xx].setStyle("-fx-border-color:yellow;");
-                                grid[xx].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    
-                                    for(int off=18;off<24;off++){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                        }
-                                    
-                                    removeDown(grid,xx,true);
-
-                                        if(countDice<times){
-                                        countDice++;
-                                        bluePlays(grid,dOne,dOne);
-                                        }
-                                        
-                                        
-
-                                }
-                                });
-            
-            
-            }
-            }//for
-
-                        
-                        
-        }//if blueEnds
-        else{
-        
-            if(outBlue>0){
-            
-                if(outBlue==1){
-
-                if( (blue[dOne-1] !=0) || (oneBlack[dOne-1]==1) || (empty[dOne-1]==1) ){
-                
-                grid[dOne-1].setStyle("-fx-border-color:red;");
-                grid[dOne-1].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                
-                @Override
-                public void handle(MouseEvent e) {
-                setUp(grid,dOne-1,1,true);
-                grid[dOne-1].setStyle(null);
-                outBlue--;countDice++;grid[dOne-1].setOnMouseClicked(null);
-                grid[dTwo-1].setStyle(null);grid[dTwo-1].setOnMouseClicked(null);
-                bluePlays(grid,dTwo,dTwo);
-                }                
-                });
-            }
-            if( (blue[dTwo-1] !=0) || (oneBlack[dTwo-1]==1) || (empty[dTwo-1]==1) ){
-                
-                grid[dTwo-1].setStyle("-fx-border-color:red;");
-                grid[dTwo-1].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                
-                @Override
-                public void handle(MouseEvent e) {
-                setUp(grid,dTwo-1,1,true);
-                grid[dTwo-1].setStyle(null);
-                outBlue--;countDice++;grid[dTwo-1].setOnMouseClicked(null);
-                grid[dOne-1].setStyle(null);grid[dOne-1].setOnMouseClicked(null);
-                bluePlays(grid,dOne,dOne);
-                }                
-                });
-                
-            }
-            }//if(outBlue==1)
-            else{
-                if( (blue[dOne-1] !=0) || (oneBlack[dOne-1]==1) || (empty[dOne-1]==1) ){
-                
-                grid[dOne-1].setStyle("-fx-border-color:yellow;");
-                grid[dOne-1].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                
-                @Override
-                public void handle(MouseEvent e) {
-                setUp(grid,dOne-1,1,true);
-                grid[dOne-1].setStyle(null);
-                outBlue--;countDice++;grid[dOne-1].setOnMouseClicked(null);
-                grid[dTwo-1].setStyle(null);grid[dTwo-1].setOnMouseClicked(null);
-                bluePlays(grid,dTwo,dTwo);
-                }                
-                });
-            }
-            if( (blue[dTwo-1] !=0) || (oneBlack[dTwo-1]==1) || (empty[dTwo-1]==1) ){
-                
-                grid[dTwo-1].setStyle("-fx-border-color:yellow;");
-                grid[dTwo-1].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                
-                @Override
-                public void handle(MouseEvent e) {
-                setUp(grid,dTwo-1,1,true);
-                grid[dTwo-1].setStyle(null);
-                outBlue--;
-                countDice++;grid[dTwo-1].setOnMouseClicked(null);
-                grid[dOne-1].setStyle(null);grid[dOne-1].setOnMouseClicked(null);
-                bluePlays(grid,dOne,dOne);
-                }                
-                });
-            }//if
-            }//else
-        }//if(outBlue>0)
-        else{
-            
-        for(int gg=0; gg<24; gg++){        
-        if((gg+dOne<24) || (gg+dTwo<24) ){    
-        final int l=gg;        
-       if (blue[gg]!=0 &&
-        		((gg+dOne>=0 && gg+dOne <24 &&
-        		(oneBlack[gg+dOne] == 1|| empty[gg+dOne] == 1|| blue[gg+dOne]!=0)) ||
-        		(gg +dTwo >=0 && gg+dTwo<24 &&
-        		(oneBlack[gg+dTwo] == 1|| empty[gg+dTwo] == 1 || blue[gg+dTwo] !=0))))
-        
-        		{
-        	
-            grid[gg].setStyle("-fx-border-color:pink;");
-            grid[gg].setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent e) {
-
-                playBlue(grid,l,dOne,dTwo);
-                
-            }
-            });
-        
-        }
-        }
-        }//for
-        }//else
-        }//else
-      
-    }
-
-    public void blackPlays(GridPane[] grid,int dOne,int dTwo){
-    
-    	if(surprisePlayed&&counter==0)
-        {
-    		SurprisePopUp popup = new SurprisePopUp();
-    		popup.show(mainStage); // Replace 'primaryStage' with your main stage variable.
-
-    		//Backgammon.startingPlayer = false;
-        	counter++;
-        	
-        }
-        int[] black=new int[30];
-        int[] oneBlue= new int[30];
-        int[] empty=new int[30];
-        
-        
-        black=whereBlack();
-        oneBlue=oneBlue();
-        empty=emptyCols();
-        
-                if(blackGameE(black)){
-    
-                    try {       Stage stage=new Stage(); 
-
-                    Backgammon.stopTimer();
-            		addGameToHistory(Login.player1,Login.player2,Login.player2,difficulty,Backgammon.secondsElapsed);
-                    Group group = new Group();
-                    Scene scene = new Scene(group, 500, 500, Color.BLACK);
-                    stage.setTitle("BLACK WINS");
-                    stage.setScene(scene);
-                    stage.show();
-                    b.close();
-        
-                    } catch (Exception ex) { }
-
-                }
-                                
-            if( blackEnds(black) ){
-
-            for(int x=5;x>-1;x--){
-            
-            if( (black[x]!=0) && (x-dOne>-2 || x-dTwo>-2) && countDice<times){
-                final int xx=x;workIt=false;
-                grid[xx].setStyle("-fx-border-color:red;");
-                grid[xx].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                @Override
-                public void handle(MouseEvent e) {
-                                        
-                grid[xx].setStyle(null);
-                grid[xx].setOnMouseClicked(null);
-
-                    if(xx-dOne>-1){
-                        
-                                grid[xx-dOne].setStyle("-fx-border-color:yellow;");
-                                grid[xx-dOne].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    played=false;
-                                    removeUp(grid,xx,false);
-                                    setUp(grid,xx-dOne,1,false);
-
-                                    for(int off=5;off>-1;off--){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                                    
-                                    if(countDice<times){
-                                        countDice++;workIt=true;
-                                        blackPlays(grid,dTwo,dTwo);
-                                        }
-                                    
-                                }                
-                                });
-                    }else if(xx-dOne==-1 ){
-                        removeUp(grid,xx,false);
-                                played=false;
-                                    for(int off=5;off>-1;off--){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                                    
-                                        if(countDice<times){
-                                        countDice++;workIt=true;
-                                        blackPlays(grid,dTwo,dTwo);
-                                        }
-                        
-                        
-                    }
-                    if(xx-dTwo>-1 && played){
-                        
-                                grid[xx-dTwo].setStyle("-fx-border-color:yellow;");
-                                grid[xx-dTwo].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    
-                                        removeUp(grid,xx,false);
-                                        setUp(grid,xx-dTwo,1,false);
-                                        
-                                        for(int off=5;off>-1;off--){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                        }
-
-                                        if(countDice<times){
-                                        countDice++;workIt=true;
-                                        blackPlays(grid,dOne,dOne);
-                                        }
-
-                                }                
-                                });
-                    }else if(xx-dTwo==-1 && played){
-                        removeUp(grid,xx,false);
-                        
-                                    for(int off=5;off>-1;off--){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                                      
-                                        if(countDice<times){
-                                        countDice++;workIt=true;
-                                        blackPlays(grid,dOne,dOne);
-                                        }
-                    }            
-                }                
-                });
-            }//if      
-            else if( (black[x]!=0) && (x-dOne>-2 || x-dTwo>-2) ){
-            
-            final int xx=x;workIt=false;
-                grid[xx].setStyle("-fx-border-color:pink;");
-                grid[xx].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                @Override
-                public void handle(MouseEvent e){
- 
-                grid[xx].setStyle(null);
-                grid[xx].setOnMouseClicked(null);
-
-                    if(xx-dOne>-1){
-                        
-                                grid[xx-dOne].setStyle("-fx-border-color:yellow;");
-                                grid[xx-dOne].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    played=false;
-                                    removeUp(grid,xx,false);
-                                    setUp(grid,xx-dOne,1,false);
-
-                                    for(int off=5;off>-1;off--){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-
-                                }                
-                                });
-                    }else if(xx-dOne==-1 ){
-                        removeUp(grid,xx,false);
-                                played=false;
-                                    for(int off=5;off>-1;off--){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                    }
-                    if(xx-dTwo>-1 && played){
-                        
-                                grid[xx-dTwo].setStyle("-fx-border-color:yellow;");
-                                grid[xx-dTwo].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    
-                                        removeUp(grid,xx,false);
-                                        setUp(grid,xx-dTwo,1,false);
-                                        
-                                        for(int off=5;off>-1;off--){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                        }
-
-                                }                
-                                });
-                    }else if(xx-dTwo==-1 && played){
-                        removeUp(grid,xx,false);
-                        
-                                    for(int off=5;off>-1;off--){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                    }
-                    }            
-                }                
-                });
-            
-            }//else
-            else if( (black[x]!=0) && ( ( x-dOne<-1 ) || ( x-dTwo<-1 ) ) && workIt){
-            
-            int xx=x;x=-1;
-                                grid[xx].setStyle("-fx-border-color:white;");
-                                grid[xx].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                                @Override
-                                public void handle(MouseEvent e) {
-                                    
-                                    for(int off=5;off>-1;off--){
-                                    
-                                        grid[off].setStyle(null);
-                                        grid[off].setOnMouseClicked(null);
-                                        }
-                                    
-                                    removeUp(grid,xx,false);
-
-                                        if(countDice<times){
-                                        countDice++;
-                                        blackPlays(grid,dOne,dOne);
-                                        }
-                                }
-                                });
-            }
-            }//for
-        }//else
-        else{
-
-            if(outBlack>0){
-            if(outBlack==1){
-                
-                if( (black[24-dOne] !=0) || (oneBlue[24-dOne]==1) || (empty[24-dOne]==1) ){
-                int[] oneB=oneBlue;
-                grid[24-dOne].setStyle("-fx-border-color:red;");
-                grid[24-dOne].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                
-                @Override
-                public void handle(MouseEvent e) {
-                    
-                setDown(grid,24-dOne,1,false);
-
-                outBlack--;countDice++;grid[24-dOne].setStyle(null);grid[24-dOne].setOnMouseClicked(null);
-                grid[24-dTwo].setStyle(null);grid[24-dTwo].setOnMouseClicked(null);
-                blackPlays(grid,dTwo,dTwo);
-                }                
-                });
-            }
-            if( (black[24-dTwo] !=0) || (oneBlue[24-dTwo]==1) || (empty[24-dTwo]==1) ){
-                int[] oneB=oneBlue;
-                grid[24-dTwo].setStyle("-fx-border-color:red;");
-                grid[24-dTwo].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                
-                @Override
-                public void handle(MouseEvent e) {
-                    
-                setDown(grid,24-dTwo,1,false);
-                
-                outBlack--;countDice++;grid[24-dTwo].setStyle(null);grid[24-dTwo].setOnMouseClicked(null);
-                grid[24-dOne].setStyle(null);grid[24-dOne].setOnMouseClicked(null);
-                blackPlays(grid,dOne,dOne);
-                }                
-                });
-
-            }
-            }//if(outBlue==1)
-            else{
-            
-            if( (black[24-dOne] !=0) || (oneBlue[24-dOne]==1) || (empty[24-dOne]==1) ){
-                
-                grid[24-dOne].setStyle("-fx-border-color:yellow;");
-                grid[24-dOne].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                
-                @Override
-                public void handle(MouseEvent e) {
-                setDown(grid,24-dOne,1,false);
-                grid[24-dOne].setStyle(null);
-                outBlack--;
-                countDice++;grid[24-dOne].setStyle(null);grid[24-dOne].setOnMouseClicked(null);
-                grid[24-dTwo].setStyle(null);grid[24-dTwo].setOnMouseClicked(null);
-                blackPlays(grid,dTwo,dTwo);
-                }                
-                });
-            }
-            if( (black[24-dTwo] !=0) || (oneBlue[24-dTwo]==1) || (empty[24-dTwo]==1) ){
-                
-                grid[24-dTwo].setStyle("-fx-border-color:yellow;");
-                grid[24-dTwo].setOnMouseClicked(new EventHandler<MouseEvent>(){
-                
-                @Override
-                public void handle(MouseEvent e) {
-                setDown(grid,24-dTwo,1,false);
-                grid[24-dTwo].setStyle(null);
-                outBlack--;
-                countDice++;grid[24-dTwo].setStyle(null);grid[24-dTwo].setOnMouseClicked(null);
-                grid[24-dOne].setStyle(null);grid[24-dOne].setOnMouseClicked(null);
-                blackPlays(grid,dOne,dOne);
-                }                
-                });
-            } 
-            }//else
-        }//if(outBlack>0)
-        else{
-                            
-        for(int gg=0; gg<24; gg++){
-        
-            if( (gg-dOne>-1) || (gg-dTwo>-1) ){
-            final int l=gg;
-                	
-                if((black[gg]!=0)&&
-                		((gg-dOne>-1 && oneBlue[gg-dOne] == 1) ||
-                		(gg - dTwo > -1 && oneBlue[gg-dTwo]==1) ||
-                		(gg-dOne > - 1 && empty[gg - dOne] == 1) ||
-                		(gg-dTwo> -1 && empty[gg-dTwo] == 1) ||
-                		(gg - dOne > -1 && black[gg-dOne] != 0)||
-                		(gg-dTwo > -1 && black [gg  -dTwo] != 0 ))) {
-
-                    grid[gg].setStyle("-fx-border-color:green;");
-                    grid[gg].setOnMouseClicked(new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent e) {
-
-                        playBlack(grid,l,dOne,dTwo);
-
-                    }
-                    });
-
-                }
-            }//if
-        }//for
-        }//else
-        }//else
-    }
-    
-    public void playBlack(GridPane[] grid,int column,int a,int b){
-
-
-        int[] oneBlue = new int[30];
-        int[] black = new int[30];
-        int[] empty = new int[30];
-        
-        oneBlue= oneBlue();
-        black=whereBlack();
-        empty=emptyCols();
-        
-        for(int hh=0; hh<24; hh++){
-        
-            grid[hh].setOnMouseClicked(null);
-            grid[hh].setStyle(null);
-            
-        }
-        if(column-a>-1){
-        if( (oneBlue[column-a] == 1) ||(black[column-a] !=0) || (empty[column-a]==1) ){
-            
-            grid[column-a].setStyle("-fx-border-color:yellow;");
-            grid[column-a].setOnMouseClicked(new EventHandler<MouseEvent>() {
-            
-            @Override
-            public void handle(MouseEvent e) {
-
-                blackMoves(grid,column,a);
-                
-                grid[column-a].setOnMouseClicked(null);
-                grid[column-a].setStyle(null);
-                if (column - b>-1) {
-                grid[column-b].setOnMouseClicked(null);
-                grid[column-b].setStyle(null);
-                
-                }
-
-                if(countDice<times)
-                blackPlays(grid,b,b);
-                
-                countDice++;
-            }
-            });
-            
-        }
-        }
-        if(column-b>-1){
-        if( (oneBlue[column-b] == 1) ||(black[column-b] !=0) || (empty[column-b]==1) ){
-            
-            grid[column-b].setStyle("-fx-border-color:yellow;");
-            grid[column-b].setOnMouseClicked(new EventHandler<MouseEvent>() {
-            
-            @Override
-            public void handle(MouseEvent e) {
-
-                blackMoves(grid,column,b);
-                grid[column-b].setStyle(null);
-                grid[column-b].setOnMouseClicked(null);
-                if (column - a >-1)
-                {
-                    grid[column-a].setStyle(null);
-                    grid[column-a].setOnMouseClicked(null);
-
-                }
-                
-                if(countDice<times)
-                blackPlays(grid,a,a);
-                
-                countDice++;
-            }
-            });
-            
-        }
-        }
-
-    }
-    
-    public void blackMoves(GridPane[] grid, int column, int dice) {
-        if ((column > 11) && (column - dice > 11)) {
-            removeDown(grid, column, false);
-            setDown(grid, column - dice, 1, false);
-        } else if ((column > 11) && (column - dice <= 11)) {
-            removeDown(grid, column, false);
-            setUp(grid, column - dice, 1, false);
-        } else {
-            removeUp(grid, column, false);
-            setUp(grid, column - dice, 1, false);
-        }
-
-        // Checking if the pawn reached the spot
-        handleQuestionSpot(grid, column - dice);
-        handleSurpriseSpot(grid,column-dice);
-
-    }
-
-        
-    public int[] whereBlue(){
-    
-        int[] numbero = new int[30];
-        
-        for(int a=0; a<24; a++){
-    
-        if(blueUp[a] != 0){
-            numbero[a]=blueUp[a];
-        }    
-        if(blueDown[a] != 0){
-            numbero[a]=blueDown[a];
-        }
-
-        }
-
-        return numbero;  
-    }
-    
-    public int[] whereBlack(){
-    
-        int[] numbero = new int[30];
-        
-        for(int a=0; a<24; a++){
-    
-        if(blackUp[a] != 0){
-            numbero[a]=blackUp[a];
-        }    
-        if(blackDown[a] != 0){
-            numbero[a]=blackDown[a];
-        }
-
-        }
-        return numbero;  
-    }
-
-    public int[] oneBlue(){
-    
-    int[] numbero=new int[30];
-    
-    for(int a=0; a<24; a++){
-    
-        if(blueUp[a] == 1){
-            numbero[a]=blueUp[a];
-        }    
-        if(blueDown[a] == 1){
-            numbero[a]=blueDown[a];
-        }
-
-        }
-    
-    return numbero;
-    
-    }
-
-    public int[] oneBlack(){
-    
-    int[] numbero=new int[30];
-    
-    for(int a=0; a<24; a++){
-    
-        if(blackUp[a] == 1){
-            numbero[a]=blackUp[a];
-        }    
-        if(blackDown[a] == 1){
-            numbero[a]=blackDown[a];
-        }
-
-        }
-    return numbero;
-    
-    }
-
-    public int[] emptyCols(){
-    
-            int[] emptyCols= new int[30];
-            
-            for(int a=0; a<24; a++){
-
-                    if( (blueUp[a] == 0) && (blueDown[a] == 0) && (blackUp[a] == 0) && (blackDown[a] == 0)){
-                    
-                        emptyCols[a]=1;
-                    
-                    }else{emptyCols[a]=0;}
-            }
-    return emptyCols;
-    }
-
-    public void setTimes(int times){ this.times=times;}
+    // --------------------------------------------------------------------------------
+    // Times / reset
+    // --------------------------------------------------------------------------------
+    public void setTimes(int t){ times = t; }
     public int getTimes(){return times;}
-    public void reset(){countDice=1;played=true;workIt=true;}
-
-    public boolean blueEnds(int[] blue){
-
-     for(int q=17; q>=0;q--){
-
-     if(blue[q]!=0)
-         return false;
-     }
-         return true;
-
+    public void reset(){
+        countDice=1;
+        played=true;
+        workIt=true;
     }
 
-    public boolean blackEnds(int[] black){
+    // --------------------------------------------------------------------------------
+    // Questions & Surprises
+    // --------------------------------------------------------------------------------
+    public static int[] getQuestions(){return questions;}
 
-     for(int q=6; q<=23;q++){
-
-     if(black[q]!=0)
-         return false;
-     }
-         return true;
-
-    }
-    
-    public boolean blueGameE(int[] blue){
-    
-        for(int q=0; q<24;q++){
-
-        if(blue[q]!=0)
-            return false;
+    /**
+     * Helper: If Hard, show a random question at start of turn and wait for correct answer.
+     * Returns true if the turn should continue, false if the player lost the turn.
+     * 
+     * @param from Indicates the source of the question ("turn" or "spot").
+     */
+    private void promptQuestionEachTurn(String from){
+        if("Hard".equalsIgnoreCase(difficulty)){
+            // Show the question screen and let it handle the turn logic
+            QuestionScreen qScreen = new QuestionScreen();
+            qScreen.show(mainStage, "Hard", from);
+            // The QuestionScreen handles the startingPlayer flag if the answer was wrong
         }
-         return true;
     }
-    public boolean blackGameE(int[] blue){
-    
-        for(int q=23; q>-1;q--){
 
-        if(blue[q]!=0)
-            return false;
-        }
-         return true;
-    } 
-    public static void addGameToHistory(String player1, String player2, String winner, String difficulty, int secondsElapsed) {
-        List<String> historyLines = new ArrayList<>();
-        
-        // Step 1: Read existing file content (if it exists)
-        try (BufferedReader reader = new BufferedReader(new FileReader(HISTORY_FILE))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                historyLines.add(line.trim());
+    /**
+     * Handle special question spot.
+     */
+    public void handleQuestionSpot(GridPane[] columns, int col){
+        for(int q : questions){
+            if(q == col){
+                // Handle question spot
+                if("Hard".equalsIgnoreCase(difficulty)){
+                    // Blocking question
+                    promptQuestionEachTurn("spot");
+                    // If answered incorrectly, startingPlayer is toggled by QuestionScreen
+                    // No further action needed here
+                } else {
+                    // For non-hard modes, show question without blocking
+                    Random r = new Random();
+                    int x = r.nextInt(3)+1;
+                    String diff;
+                    switch(x){
+                        case 1: diff="Easy";break;
+                        case 2: diff="Medium";break;
+                        default: diff="Hard";break;
+                    }
+                    QuestionScreen screen = new QuestionScreen();
+                    screen.show(mainStage, diff, "spot");
+                }
             }
-        } catch (IOException e) {
-            // File doesn't exist, initialize a new history
-            historyLines.add("[");
         }
+    }
 
-        // Step 2: Remove the closing bracket of the JSON array (if it exists)
-        if (!historyLines.isEmpty() && historyLines.get(historyLines.size() - 1).equals("]")) {
-            historyLines.remove(historyLines.size() - 1);
+    /**
+     * Handles the surprise spot and grants an extra turn to the current player.
+     *
+     * @param columns The game board columns.
+     * @param col     The column where the player landed.
+     * @param isBlue  True if the current player is Blue, False if Black.
+     */
+    /**
+     * Handles the surprise spot and grants an extra turn to the current player.
+     *
+     * @param columns The game board columns.
+     * @param col     The column where the player landed.
+     * @param isBlue  True if the current player is Blue, False if Black.
+     */
+    private void handleSurpriseSpot(GridPane[] columns, int col, boolean isBlue) {
+        if (col == surprise) {
+            System.out.println("Surprise spot reached!");
+
+            // Display the Surprise Pop-Up
+            SurprisePopUp pop = new SurprisePopUp();
+            pop.show(mainStage);
+
+            // Set the extra turn flag based on the current player
+            if (isBlue) {
+                blueExtraTurnGranted = true;
+                System.out.println("Blue player granted an extra turn.");
+            } else {
+                blackExtraTurnGranted = true;
+                System.out.println("Black player granted an extra turn.");
+            }
+
+            // Ensure that the turn is fully completed before granting the extra turn
+            resetTurnCompletion(); // Mark the turn as incomplete
+            Platform.runLater(() -> waitForTurnCompletion(columns, isBlue));
         }
+    }
 
-        // Step 3: Add the new game result
-        String newGameEntry = String.format(
-            "  ,{\n" +
-            "    \"player1\": \"%s\",\n" +
-            "    \"player2\": \"%s\",\n" +
-            "    \"winner\": \"%s\",\n" +
-            "    \"difficulty\": \"%s\",\n" +
-            "    \"duration\": \"%s seconds\"\n" +
-            "  }",
-            player1, player2, winner, difficulty, secondsElapsed
-        );
-        if (!historyLines.isEmpty() && !historyLines.get(0).equals("[")) {
-            historyLines.add(","); // Add a comma if this is not the first entry
+    
+    private boolean turnComplete = false;
+
+    private boolean isTurnComplete() {
+        return turnComplete;
+    }
+
+    private void resetTurnCompletion() {
+        this.turnComplete = false;
+    }
+
+    private boolean hasPawnsToReenter(boolean isBlue) {
+        return (isBlue && outBlue > 0) || (!isBlue && outBlack > 0);
+    }
+
+    
+    private void waitForTurnCompletion(GridPane[] columns, boolean isBlue) {
+        // Declare the timeline locally
+        Timeline waitTimeline = new Timeline();
+
+        // Schedule a periodic check to see if the turn is complete
+        waitTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(200), event -> {
+            // Check if all dice have been used and no pawns need re-entry
+            if (availableDice.isEmpty() && !hasPawnsToReenter(isBlue)) {
+                setTurnComplete(); // Mark the turn as complete
+                System.out.println("Current turn completed. Granting extra turn.");
+
+                // Reset the turn completion flag
+                resetTurnCompletion();
+
+                // Trigger the extra turn
+                if (isBlue && blueExtraTurnGranted) {
+                    blueExtraTurnGranted = false;
+                    System.out.println("Initiating Blue's extra turn.");
+                    // Let the player roll dice manually
+                    Backgammon.startingPlayer = true;
+                } else if (!isBlue && blackExtraTurnGranted) {
+                    blackExtraTurnGranted = false;
+                    System.out.println("Initiating Black's extra turn.");
+                    // Let the player roll dice manually
+                    Backgammon.startingPlayer = false;
+                }
+
+                waitTimeline.stop(); // Stop the timeline after the extra turn logic
+            }
+        }));
+
+        waitTimeline.setCycleCount(Animation.INDEFINITE); // Keep checking until the turn is complete
+        waitTimeline.play();
+    }
+
+    
+    
+
+
+
+
+
+
+
+    // --------------------------------------------------------------------------------
+    // History
+    // --------------------------------------------------------------------------------
+    public static void addGameToHistory(String p1, String p2, String winner, String diff, int sec){
+        List<String> lines = new ArrayList<>();
+        try(BufferedReader rdr = new BufferedReader(new FileReader(HISTORY_FILE))){
+            String line;
+            while((line=rdr.readLine())!=null){
+                lines.add(line.trim());
+            }
+        } catch(IOException e){
+            lines.add("[");
         }
-        historyLines.add(newGameEntry);
-
-        // Step 4: Close the JSON array
-        historyLines.add("]");
-
-        // Step 5: Write the updated history back to the file
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(HISTORY_FILE))) {
-            for (String line : historyLines) {
-                writer.write(line);
-                writer.newLine();
+        if(!lines.isEmpty() && lines.get(lines.size()-1).equals("]")){
+            lines.remove(lines.size()-1);
+        }
+        String newEntry = String.format(
+                "  {\n" +
+                "    \"player1\":\"%s\",\n" +
+                "    \"player2\":\"%s\",\n" +
+                "    \"winner\":\"%s\",\n" +
+                "    \"difficulty\":\"%s\",\n" +
+                "    \"duration\":\"%d seconds\"\n" +
+                "  }",p1,p2,winner,diff,sec);
+        if(lines.size()>1){
+            lines.add(",");
+        }
+        lines.add(newEntry);
+        lines.add("]");
+        try(BufferedWriter w = new BufferedWriter(new FileWriter(HISTORY_FILE))){
+            for(String s: lines){
+                w.write(s);
+                w.newLine();
             }
             System.out.println("Game history updated successfully.");
-        } catch (IOException e) {
-            System.err.println("Failed to write to history file: " + e.getMessage());
+        }catch(IOException ex){
+            ex.printStackTrace();
         }
     }
 
+    // --------------------------------------------------------------------------------
+    // Shared / Utility Methods
+    // --------------------------------------------------------------------------------
+
+    /**
+     * Clears all styles and mouse click handlers from the board.
+     *
+     * @param board The game board.
+     */
+    private void clearHighlights(GridPane[] board){
+        for(int c=0; c<24; c++){
+            board[c].setStyle(null);
+            board[c].setOnMouseClicked(null);
+        }
+    }
+
+    /**
+     * Removes a die from the availableDice list after it's used.
+     *
+     * @param die The die value to remove.
+     */
+    private void useDie(int die){
+        availableDice.remove((Integer) die);
+    }
+
+    /**
+     * Displays an alert to the user.
+     *
+     * @param title   The title of the alert.
+     * @param message The message content.
+     */
+    private void showAlert(String title, String message){
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+
+    /**
+     * Resets the turn by resetting dice counters and flags.
+     */
+    private void resetTurn() {
+        countDice = 1;
+        played = true;
+        workIt = true;
+
+        // Mark the turn as complete
+        setTurnComplete();
+    }
+
+    private void setTurnComplete() {
+        this.turnComplete = true;
+    }
+
+
+    /**
+     * Ends the game, declaring the winner and updating history.
+     *
+     * @param winnerName The name of the winner.
+     * @param colorStr   The color representing the winner.
+     */
+    private void endGame(String winnerName, String colorStr){
+        try{
+            Backgammon.stopTimer();
+            addGameToHistory(Login.player1, Login.player2, winnerName, difficulty, Backgammon.secondsElapsed);
+            Stage st = new Stage();
+            Group gp = new Group();
+            Scene sc = new Scene(gp, 500, 500, 
+                "BLUE".equals(colorStr) ? Color.BLUE : Color.BLACK);
+            st.setTitle(colorStr + " WINS!");
+            st.setScene(sc);
+            st.show();
+            mainStage.close();
+        } catch(Exception ex){
+            ex.printStackTrace();
+        }
+    }
+    
+    private boolean canBlueBearOff() {
+        for (int i = 0; i < 18; i++) {
+            if (blueUp[i] > 0 || blueDown[i] > 0) {
+                return false; // Blue pawns still outside the home area
+            }
+        }
+        return true; // All Blue pawns are in the home area
+    }
+
+    private boolean canBlackBearOff() {
+        for (int i = 6; i < 24; i++) {
+            if (blackUp[i] > 0 || blackDown[i] > 0) {
+                return false; // Black pawns still outside the home area
+            }
+        }
+        return true; // All Black pawns are in the home area
+    }
+    
+    private void highlightBlueBearingOff(GridPane[] board) {
+        // Highlight only if eligible
+        if (!canBlueBearOff()) return;
+
+        for (Integer die : availableDice) {
+            int targetIndex = 23 - (die - 1); // Calculate bearing-off index
+            if (targetIndex >= 18 && targetIndex <= 23 && gatherBlue()[targetIndex] > 0) {
+                board[targetIndex].setStyle("-fx-border-color:purple;");
+                final int usedDie = die;
+                final int fromCol = targetIndex;
+
+                board[targetIndex].setOnMouseClicked(e -> {
+                    // Perform bearing-off
+                    removeBlue(board, fromCol, 1);
+                    useDie(usedDie);
+
+                    // Check if game is over
+                    if (blueGameOver()) {
+                        endGame(Login.player1, "BLUE");
+                    } else {
+                        // Continue turn
+                        highlightAllBlue(board);
+                    }
+                });
+            }
+        }
+    }
+    
+    private void removeBlue(GridPane[] board, int col, int count) {
+        // Remove `count` pawns from the column for Blue
+        if (col < 12) {
+            blueUp[col] -= count;
+        } else {
+            blueDown[col] -= count;
+        }
+
+        // Remove the visual representation from the board
+        int childrenCount = howManyContains(board, col);
+        if (childrenCount > 0) {
+            board[col].getChildren().remove(childrenCount - 1); // Remove topmost pawn
+        }
+    }
+    
+    private void removeBlack(GridPane[] board, int col, int count) {
+        // Remove `count` pawns from the column for Black
+        if (col < 12) {
+            blackUp[col] -= count;
+        } else {
+            blackDown[col] -= count;
+        }
+
+        // Remove the visual representation from the board
+        int childrenCount = howManyContains(board, col);
+        if (childrenCount > 0) {
+            board[col].getChildren().remove(childrenCount - 1); // Remove topmost pawn
+        }
+    }
+
+
+
+    private void highlightBlackBearingOff(GridPane[] board) {
+        if (!canBlackBearOff()) return;
+
+        for (Integer die : availableDice) {
+            int targetIndex = die - 1; // Calculate bearing-off index
+            if (targetIndex >= 0 && targetIndex <= 5 && gatherBlack()[targetIndex] > 0) {
+                board[targetIndex].setStyle("-fx-border-color:purple;");
+                final int usedDie = die;
+                final int fromCol = targetIndex;
+
+                board[targetIndex].setOnMouseClicked(e -> {
+                    // Perform bearing-off
+                    removeBlack(board, fromCol, 1);
+                    useDie(usedDie);
+
+                    // Check if game is over
+                    if (blackGameOver()) {
+                        endGame(Login.player2, "BLACK");
+                    } else {
+                        // Continue turn
+                        highlightAllBlack(board);
+                    }
+                });
+            }
+        }
+    }
+    
+    public int[] getBlueUp() {
+        return blueUp;
+    }
+    public int[] getBlackDown() {
+        return blackDown;
+    }
+    
+
 }
+
+
+//THIS IS THE SHIT!!!!!!!!!!!
