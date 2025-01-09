@@ -68,11 +68,43 @@
 "duration":"112 seconds"
 }
 ,
+{
+"player1":"Matan",
+"player2":"Gal",
+"winner":"Gal",
+"difficulty":"Medium",
+"duration":"92 seconds"
+}
+,
+{
+"player1":"aSD",
+"player2":"dsa",
+"winner":"dsa",
+"difficulty":"Easy",
+"duration":"216 seconds"
+}
+,
+{
+"player1":"asd",
+"player2":"dsa",
+"winner":"asd",
+"difficulty":"Easy",
+"duration":"207 seconds"
+}
+,
+{
+"player1":"yonatan",
+"player2":"ofek",
+"winner":"ofek",
+"difficulty":"Easy",
+"duration":"298 seconds"
+}
+,
   {
-    "player1":"Matan",
-    "player2":"Gal",
-    "winner":"Gal",
-    "difficulty":"Medium",
-    "duration":"92 seconds"
+    "player1":"asd",
+    "player2":"dsa",
+    "winner":"asd",
+    "difficulty":"Easy",
+    "duration":"169 seconds"
   }
 ]

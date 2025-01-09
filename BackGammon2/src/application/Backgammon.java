@@ -36,7 +36,7 @@ public class Backgammon extends Application {
     private static Timeline timeline;
     
 
-    private String difficulty = "Easy"; // default
+    public static String difficulty = "Easy"; // default
     public static boolean startingPlayer = true; // who starts (true = player1)
 
     Label timerLabel = new Label("Time: 0s");
@@ -137,30 +137,26 @@ public class Backgammon extends Application {
         diceBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                System.out.println("Dice roll button clicked!");
 
                 int dice1 = rollDice(difficulty);
                 int dice2 = rollDice(difficulty);
 
-                System.out.println("Dice One: " + dice1);
-                System.out.println("Dice Two: " + dice2);
-
                 one.setText(String.valueOf(dice1));
                 two.setText(String.valueOf(dice2));
-
                 if (startingPlayer) {
                     // If doubles => times=4
                     if (dice1 == dice2) theGame.setTimes(4);
-                    startingPlayer = false;
+                    
                     diceBtn.setText(p2Name + "'s Turn 🎲");
                     theGame.reset();
                     theGame.bluePlays(gridCols, dice1, dice2);
+                    startingPlayer = false;
                 } else {
                     if (dice1 == dice2) theGame.setTimes(4);
-                    startingPlayer = true;
                     diceBtn.setText(p1Name + "'s Turn 🎲");
                     theGame.reset();
                     theGame.blackPlays(gridCols, dice1, dice2);
+                    startingPlayer = true;
                 }
             }
         });
@@ -192,12 +188,10 @@ public class Backgammon extends Application {
             // Select a random index from the HARD_DICE_VALUES array
             int index = rand.nextInt(HARD_DICE_VALUES.length);
             int rolledValue = HARD_DICE_VALUES[index];
-            System.out.println("Hard difficulty roll: " + rolledValue);
             return rolledValue;
         } else {
             // Standard die roll: 1 to 6
             int rolledValue = rand.nextInt(6) + 1;
-            System.out.println("Standard difficulty roll: " + rolledValue);
             return rolledValue;
         }
     }

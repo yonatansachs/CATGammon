@@ -37,9 +37,10 @@ public class GamePlay extends Pawns {
     private Stage mainStage;
     private final Pawns pawn = new Pawns();
     
-    // Introduce separate extra turn flags for Blue and Black
+    // Extra turn flags
     private boolean blueExtraTurnGranted = false;
     private boolean blackExtraTurnGranted = false;
+    private int counter =0;
 
     // Pawns in each column (0..23)
     private final int[] blueUp   = new int[24];
@@ -50,18 +51,14 @@ public class GamePlay extends Pawns {
     // Over-5 stacks
     private final int[] sevenNum = new int[24];
 
-    // How many pawns are "out" / eaten
+    // Pawns "out"
     private int outBlue  = 0;
     private int outBlack = 0;
 
-    // Normally 2 moves, or 4 if doubles
     private int times = 2;    
     private int countDice = 1; 
-
-    // Some booleans from your original code
     private boolean played = true;
     private boolean workIt = true;
-
     private int surpriseCounter = 0;
 
     // Surprise / question data
@@ -71,8 +68,11 @@ public class GamePlay extends Pawns {
 
     private static final String HISTORY_FILE = "src/View/game_history.json";
 
-    // List to hold remaining dice for the current turn
+    // Current turn's dice
     private List<Integer> availableDice;
+
+    // Turn-completion
+    private boolean turnComplete = false;
 
     public GamePlay(GridPane[] boardCols, Stage stage, String difficulty) {
         GamePlay.difficulty = difficulty;
@@ -87,9 +87,9 @@ public class GamePlay extends Pawns {
             sevenNum[i] = 0;
         }
 
+        // Random question + surprise
         Set<Integer> used = new HashSet<>();
         Random rand = new Random();
-        // Random question spots
         for(int i=0; i<3; i++){
             questions[i] = selectRandomSpot(rand);
             while(used.contains(questions[i])){
@@ -98,13 +98,13 @@ public class GamePlay extends Pawns {
             used.add(questions[i]);
             System.out.println("Question spot selected: " + questions[i]);
         }
-        // Random surprise
         surprise = selectRandomSpot(rand);
         while(used.contains(surprise)){
             surprise = selectRandomSpot(rand);
         }
         System.out.println("Surprise spot selected: " + surprise);
 
+        // Place initial pawns
         initializePawns(boardCols);
     }
 
@@ -113,7 +113,7 @@ public class GamePlay extends Pawns {
     }
 
     /**
-     * Basic initial layout (similar to your code).
+     * Example arrangement
      */
     private void initializePawns(GridPane[] cols){
         // Example arrangement:
@@ -156,18 +156,21 @@ public class GamePlay extends Pawns {
         setUp(cols, 5, 1, false);
     }
 
+    // ======================= BLUE TURN =======================
     public void bluePlays(GridPane[] board, int dOne, int dTwo) {
-        // Store current starting player
-        boolean wasStartingPlayer = Backgammon.startingPlayer;
         promptQuestionEachTurn("turn");
-        
-        if (wasStartingPlayer != Backgammon.startingPlayer) return;
+        boolean wasStartingPlayer = true;
+        if (wasStartingPlayer != Backgammon.startingPlayer) {
+            return;
+        }
 
+        // Setup dice
         availableDice = new ArrayList<>();
         availableDice.add(dOne);
         availableDice.add(dTwo);
 
         if (Math.abs(dOne) == Math.abs(dTwo)) {
+            // doubles => 4 moves
             availableDice.add(dOne);
             availableDice.add(dTwo);
             setTimes(4);
@@ -175,11 +178,13 @@ public class GamePlay extends Pawns {
             setTimes(2);
         }
 
+        // Must re-enter if out
         if (outBlue > 0) {
             reEnterBluePawns(board);
             return;
         }
 
+        // Possibly game over
         if (blueGameOver()) {
             endGame(Login.player1, "BLUE");
             return;
@@ -188,26 +193,21 @@ public class GamePlay extends Pawns {
         reset();
         highlightAllBlue(board);
 
+        // Next turn
         if (!blueExtraTurnGranted) {
             Backgammon.startingPlayer = false;
         } else {
             blueExtraTurnGranted = false;
             System.out.println("Blue player gets an extra turn.");
             Backgammon.startingPlayer = true;
-            // Next dice roll will trigger another blue turn automatically
-            // since startingPlayer remains true
         }
     }
 
-
-
-
-    // ============ RE-ENTER BLUE PAWNS ============
+    // Re-enter Blue pawns if they're out
     private void reEnterBluePawns(GridPane[] board){
-        // Clear highlights
         clearHighlights(board);
 
-        // Determine valid dice for re-entry (only positive dice for Blue re-entry)
+        // Only positive dice for re-entry
         List<Integer> validDice = new ArrayList<>();
         for(Integer die : availableDice){
             if(die > 0 && isValidReEntryDieForBlue(die)){
@@ -216,55 +216,50 @@ public class GamePlay extends Pawns {
         }
 
         if(validDice.isEmpty()){
-            // No valid dice to re-enter, end turn immediately since we can't proceed
             showAlert("No Re-entry Available", 
-                "No valid dice to re-enter Blue pawns. Your turn ends as you must re-enter all pawns before making other moves.");
+                "No valid dice to re-enter Blue pawns. Your turn ends.");
             resetTurn();
-            Backgammon.startingPlayer = false; // Switch to Black
-            return;  // End turn immediately
+            Backgammon.startingPlayer = false; 
+            return;
         }
 
-        // Highlight valid re-entry spots based on validDice
+        // Highlight valid re-entry
         for(Integer die : validDice){
-            int targetCol = die - 1; // die=1 maps to col=0, etc.
+            int targetCol = die - 1;
             if(targetCol >= 0 && targetCol < 6 && isValidCaptureOrStackForBlue(targetCol)){
                 board[targetCol].setStyle("-fx-border-color:red;");
                 final int usedDie = die;
                 final int finalToCol = targetCol;
                 board[targetCol].setOnMouseClicked(e->{
-                    // Perform re-entry
                     outBlue--;
                     useDie(usedDie);
                     
-                    // If exactly one black, capture it
+                    // capture black
                     if(gatherBlack()[finalToCol] == 1){
                         if(finalToCol < 12) removeUp(board, finalToCol, false);
-                        else removeDown(board, finalToCol, false);
+                        else                removeDown(board, finalToCol, false);
                         outBlack++;
                     }
                     
-                    // Place Blue
+                    // place Blue
                     if(finalToCol < 12) setUp(board, finalToCol, 1, true);
-                    else setDown(board, finalToCol, 1, true);
+                    else               setDown(board, finalToCol, 1, true);
 
                     handleQuestionSpot(board, finalToCol);
-                    handleSurpriseSpot(board, finalToCol, true); // Pass isBlue=true
+                    handleSurpriseSpot(board, finalToCol, true);
 
-                    // If we still have pawns to re-enter but no more dice, end turn
                     if(outBlue > 0 && availableDice.isEmpty()){
                         showAlert("Turn Ended", 
-                            "You have no more dice to re-enter remaining pawns. Your turn ends as you must re-enter all pawns before making other moves.");
+                            "No dice left to re-enter remaining pawns. Your turn ends.");
                         resetTurn();
-                        Backgammon.startingPlayer = false; // Switch to Black
+                        Backgammon.startingPlayer = false; 
                         return;
                     }
                     
-                    // If still have pawns to re-enter, continue re-entering
                     if(outBlue > 0){
                         reEnterBluePawns(board);
                     }
                     else{
-                        // Only allow normal moves if ALL pawns are re-entered
                         highlightAllBlue(board);
                     }
                 });
@@ -272,20 +267,29 @@ public class GamePlay extends Pawns {
         }
     }
 
-    // After re-enter, highlight normal pawns for second (third, fourth) move
+    // Highlight all Blue (bearing off + normal moves)
     private void highlightAllBlue(GridPane[] board) {
         clearHighlights(board);
 
+        // 1) If we can bear off, highlight
         if (canBlueBearOff()) {
-            highlightBlueBearingOff(board); // Highlight bearing-off options
-            return;
+            highlightBlueBearingOff(board);
         }
 
+        // 2) Normal moves
         int[] blues = gatherBlue();
         boolean hasValidMoves = false;
 
         for (int col = 0; col < 24; col++) {
-            if (blues[col] > 0) {
+            int count = blues[col];
+            if (count > 0) {
+                // if col is 18..23 and EXACT die matches => we skip normal highlight 
+                // because we want the user to remove, not move, if they click it.
+                if (col >= 18 && col <= 23 && canRemoveExactDistanceBlue(col)) {
+                    continue;
+                }
+
+                // otherwise highlight for normal moves
                 List<Integer> validDice = getValidDiceForBlue(col);
                 if (!validDice.isEmpty()) {
                     hasValidMoves = true;
@@ -296,22 +300,24 @@ public class GamePlay extends Pawns {
             }
         }
 
-        if (!hasValidMoves) {
+        if (!hasValidMoves && !canBlueBearOff()) {
             showAlert("No Moves Available", "No valid moves available for Blue.");
             resetTurn();
-            Backgammon.startingPlayer = false; // Switch to Black
+            Backgammon.startingPlayer = false; 
         }
     }
 
+    // If there's any die EXACTly matching the distance for BLUE => skip normal highlight
+    private boolean canRemoveExactDistanceBlue(int col) {
+        int needed = (23 - col) + 1;
+        for (int die : availableDice) {
+            if (die == needed) return true;
+        }
+        return false;
+    }
 
-
-
-    // Handle Blue pawn click
     private void handleBluePawnClick(GridPane[] board, int col){
-        // Clear all highlights
         clearHighlights(board);
-
-        // Determine which dice can be used to move this pawn
         List<Integer> validDice = getValidDiceForBlue(col);
 
         if(validDice.isEmpty()){
@@ -320,26 +326,16 @@ public class GamePlay extends Pawns {
             return;
         }
 
-        // Highlight target columns based on validDice
         for(Integer die : validDice){
+            final int usedDie = die;
             int toCol = col + die;
-            // Handle negative dice (moving backward)
-            if(die < 0){
-                toCol = col + die; // Move backward
-            }
-            else{
-                toCol = col + die; // Move forward
-            }
-
             if(toCol < 0 || toCol >=24){
-                // Invalid move, skip
                 continue;
             }
 
             if(isValidCaptureOrStackForBlue(toCol)){
                 board[toCol].setStyle("-fx-border-color:yellow;");
-                final int usedDie = die;
-                final int finalToCol = toCol; // Make toCol effectively final
+                final int finalToCol = toCol;
                 board[toCol].setOnMouseClicked(ev->{
                     moveBlue(board, col, finalToCol, usedDie);
                 });
@@ -347,20 +343,10 @@ public class GamePlay extends Pawns {
         }
     }
 
-    // Get valid dice for moving Blue pawn from a column
     private List<Integer> getValidDiceForBlue(int fromCol){
         List<Integer> validDice = new ArrayList<>();
         for(Integer die : availableDice){
             int toCol = fromCol + die;
-            // Handle negative dice
-            if(die < 0){
-                toCol = fromCol + die;
-            }
-            else{
-                toCol = fromCol + die;
-            }
-
-            // Ensure the move is within bounds
             if(toCol >=0 && toCol <24 && isValidCaptureOrStackForBlue(toCol)){
                 validDice.add(die);
             }
@@ -368,45 +354,32 @@ public class GamePlay extends Pawns {
         return validDice;
     }
 
-    // Actually move a Blue pawn from fromCol to toCol using usedDie
+    // Important: we call highlightAllBlue after using a die, so the bear-off options are recalculated
     private void moveBlue(GridPane[] board, int fromCol, int toCol, int usedDie){
-        // Clear highlights
         clearHighlights(board);
-        // Remove Blue pawn from the original column
-        if(fromCol <12){
-            removeUp(board, fromCol, true);
-        }
-        else{
-            removeDown(board, fromCol, true);
-        }
 
-        // Capture if exactly 1 black pawn is present
+        // remove from old col
+        if(fromCol <12) removeUp(board, fromCol, true);
+        else            removeDown(board, fromCol, true);
+
+        // capture if exactly 1 black
         if(gatherBlack()[toCol] ==1 ){
-            if(toCol <12){
-                removeUp(board, toCol, false);
-            }
-            else{
-                removeDown(board, toCol, false);
-            }
+            if(toCol <12) removeUp(board, toCol, false);
+            else          removeDown(board, toCol, false);
             outBlack++;
         }
 
-        // Place Blue pawn on the target column
-        if(toCol <12){
-            setUp(board, toCol, 1, true);
-        }
-        else{
-            setDown(board, toCol, 1, true);
-        }
+        // place Blue
+        if(toCol <12) setUp(board, toCol, 1, true);
+        else          setDown(board, toCol, 1, true);
 
-        // Handle special spots
         handleQuestionSpot(board, toCol);
-        handleSurpriseSpot(board, toCol, true); // Pass isBlue=true
-
-        // Remove the used die from availableDice
+        handleSurpriseSpot(board, toCol, true);
+        
+        // Use the die
         useDie(usedDie);
 
-        // Check if all dice are used
+        // Check if game ended
         if(availableDice.isEmpty()){
             if(blueGameOver()){
                 endGame(Login.player1, "BLUE");
@@ -421,22 +394,26 @@ public class GamePlay extends Pawns {
             reEnterBluePawns(board);
         }
         else{
+            // Re-highlight so the bear-off option is gone if we used that die for a normal move
             highlightAllBlue(board);
         }
     }
 
-    // ============ BLACK TURN ============
+    // ======================= BLACK TURN =======================
     public void blackPlays(GridPane[] board, int dOne, int dTwo) {
-        boolean wasStartingPlayer = Backgammon.startingPlayer;
         promptQuestionEachTurn("turn");
-        
-        if (wasStartingPlayer != Backgammon.startingPlayer) return;
+        boolean wasStartingPlayer = false;
+
+        if (wasStartingPlayer != Backgammon.startingPlayer) {
+            return;
+        }
 
         availableDice = new ArrayList<>();
         availableDice.add(dOne);
         availableDice.add(dTwo);
 
         if (Math.abs(dOne) == Math.abs(dTwo)) {
+            // doubles => 4 moves
             availableDice.add(dOne);
             availableDice.add(dTwo);
             setTimes(4);
@@ -463,19 +440,13 @@ public class GamePlay extends Pawns {
             blackExtraTurnGranted = false;
             System.out.println("Black player gets an extra turn.");
             Backgammon.startingPlayer = false;
-            // Next dice roll will trigger another black turn automatically
-            // since startingPlayer remains false
         }
     }
 
-
-
-
     private void reEnterBlackPawns(GridPane[] board){
-        // Clear highlights
         clearHighlights(board);
 
-        // Determine valid dice for re-entry (only positive dice for Black re-entry)
+        // only positive dice for Black re-entry
         List<Integer> validDice = new ArrayList<>();
         for(Integer die : availableDice){
             if(die > 0 && isValidReEntryDieForBlack(die)){
@@ -484,59 +455,49 @@ public class GamePlay extends Pawns {
         }
 
         if(validDice.isEmpty()){
-            // No valid dice to re-enter, end turn immediately since we can't proceed
             showAlert("No Re-entry Available", 
-                "No valid dice to re-enter Black pawns. Your turn ends as you must re-enter all pawns before making other moves.");
+                "No valid dice to re-enter Black pawns. Your turn ends.");
             resetTurn();
-            Backgammon.startingPlayer = true; // Switch to Blue
-            return;  // End turn immediately
+            Backgammon.startingPlayer = true; 
+            return;
         }
 
-        // Highlight valid re-entry spots based on validDice
         for(Integer die : validDice){
-            int targetCol = 24 - die; // Correct mapping for Black
+            final int usedDie = die;
+            int targetCol = 24 - die;
             if(targetCol >= 18 && targetCol < 24 && isValidCaptureOrStackForBlack(targetCol)){
                 board[targetCol].setStyle("-fx-border-color:red;");
-                final int usedDie = die;
                 final int finalToCol = targetCol;
                 board[targetCol].setOnMouseClicked(e->{
-                    // Perform re-entry
                     outBlack--;
                     useDie(usedDie);
                     
-                    // If exactly one blue, capture it
+                    // capture if exactly 1 blue
                     if(gatherBlue()[finalToCol] == 1){
                         if(finalToCol < 12) removeUp(board, finalToCol, true);
-                        else removeDown(board, finalToCol, true);
+                        else                removeDown(board, finalToCol, true);
                         outBlue++;
                     }
                     
-                    // Place Black
-                    if(finalToCol < 12){
-                        setUp(board, finalToCol, 1, false);
-                    }
-                    else{
-                        setDown(board, finalToCol, 1, false);
-                    }
+                    // place Black
+                    if(finalToCol <12) setUp(board, finalToCol, 1, false);
+                    else               setDown(board, finalToCol, 1, false);
 
                     handleQuestionSpot(board, finalToCol);
-                    handleSurpriseSpot(board, finalToCol, false); // Pass isBlue=false
+                    handleSurpriseSpot(board, finalToCol, false);
 
-                    // If we still have pawns to re-enter but no more dice, end turn
                     if(outBlack > 0 && availableDice.isEmpty()){
                         showAlert("Turn Ended", 
-                            "You have no more dice to re-enter remaining pawns. Your turn ends as you must re-enter all pawns before making other moves.");
+                            "No more dice to re-enter remaining pawns. Your turn ends.");
                         resetTurn();
-                        Backgammon.startingPlayer = true; // Switch to Blue
+                        Backgammon.startingPlayer = true; 
                         return;
                     }
                     
-                    // If still have pawns to re-enter, continue re-entering
                     if(outBlack > 0){
                         reEnterBlackPawns(board);
                     }
                     else{
-                        // Only allow normal moves if ALL pawns are re-entered
                         highlightAllBlack(board);
                     }
                 });
@@ -544,20 +505,26 @@ public class GamePlay extends Pawns {
         }
     }
 
-    // After re-enter, highlight normal pawns for second (third, fourth) move
     private void highlightAllBlack(GridPane[] board) {
         clearHighlights(board);
 
+        // 1) bearing off if possible
         if (canBlackBearOff()) {
-            highlightBlackBearingOff(board); // Highlight bearing-off options
-            return;
+            highlightBlackBearingOff(board);
         }
 
+        // 2) normal moves
         int[] blacks = gatherBlack();
         boolean hasValidMoves = false;
 
         for (int col = 0; col < 24; col++) {
-            if (blacks[col] > 0) {
+            int count = blacks[col];
+            if (count > 0) {
+                if (col >= 0 && col <= 5 && canRemoveExactDistanceBlack(col)) {
+                    // If there's an EXACT match to remove, skip normal highlight
+                    continue;
+                }
+
                 List<Integer> validDice = getValidDiceForBlack(col);
                 if (!validDice.isEmpty()) {
                     hasValidMoves = true;
@@ -568,49 +535,42 @@ public class GamePlay extends Pawns {
             }
         }
 
-        if (!hasValidMoves) {
+        if (!hasValidMoves && !canBlackBearOff()) {
             showAlert("No Moves Available", "No valid moves available for Black.");
             resetTurn();
-            Backgammon.startingPlayer = true; // Switch to Blue
+            Backgammon.startingPlayer = true; 
         }
     }
 
+    // If there's any die EXACTly matching the distance for Black => skip normal highlight
+    private boolean canRemoveExactDistanceBlack(int col) {
+        int needed = (col - 0) + 1;
+        for (int die : availableDice) {
+            if (die == needed) return true;
+        }
+        return false;
+    }
 
-
-    // Handle Black pawn click
     private void handleBlackPawnClick(GridPane[] board, int col){
-        // Clear all highlights
         clearHighlights(board);
 
-        // Determine which dice can be used to move this pawn
         List<Integer> validDice = getValidDiceForBlack(col);
-
         if(validDice.isEmpty()){
             showAlert("No Valid Dice", "No valid dice available to move this pawn.");
             highlightAllBlack(board);
             return;
         }
 
-        // Highlight target columns based on validDice
         for(Integer die : validDice){
+            final int usedDie = die;
             int toCol = col - die;
-            // Handle negative dice (moving backward)
-            if(die < 0){
-                toCol = col - die; // Move backward (which is forward for Black)
-            }
-            else{
-                toCol = col - die; // Move forward
-            }
-
             if(toCol < 0 || toCol >=24){
-                // Invalid move, skip
                 continue;
             }
 
             if(isValidCaptureOrStackForBlack(toCol)){
                 board[toCol].setStyle("-fx-border-color:yellow;");
-                final int usedDie = die;
-                final int finalToCol = toCol; // Make toCol effectively final
+                final int finalToCol = toCol;
                 board[toCol].setOnMouseClicked(ev->{
                     moveBlack(board, col, finalToCol, usedDie);
                 });
@@ -618,20 +578,10 @@ public class GamePlay extends Pawns {
         }
     }
 
-    // Get valid dice for moving Black pawn from a column
     private List<Integer> getValidDiceForBlack(int fromCol){
         List<Integer> validDice = new ArrayList<>();
         for(Integer die : availableDice){
             int toCol = fromCol - die;
-            // Handle negative dice
-            if(die < 0){
-                toCol = fromCol - die; // Move backward (which is forward for Black)
-            }
-            else{
-                toCol = fromCol - die; // Move forward
-            }
-
-            // Ensure the move is within bounds
             if(toCol >=0 && toCol <24 && isValidCaptureOrStackForBlack(toCol)){
                 validDice.add(die);
             }
@@ -639,46 +589,31 @@ public class GamePlay extends Pawns {
         return validDice;
     }
 
-    // Actually move a Black pawn from fromCol to toCol using usedDie
+    // Important: re-run highlightAllBlack after using a die for a normal move
     private void moveBlack(GridPane[] board, int fromCol, int toCol, int usedDie){
-        // Clear highlights
         clearHighlights(board);
-        
-        // Remove Black pawn from the original column
-        if(fromCol <12){
-            removeUp(board, fromCol, false);
-        }
-        else{
-            removeDown(board, fromCol, false);
-        }
 
-        // Capture if exactly 1 blue pawn is present
+        // remove from original
+        if(fromCol <12) removeUp(board, fromCol, false);
+        else            removeDown(board, fromCol, false);
+
+        // capture if exactly 1 blue
         if(gatherBlue()[toCol] ==1 ){
-            if(toCol <12){
-                removeUp(board, toCol, true);
-            }
-            else{
-                removeDown(board, toCol, true);
-            }
+            if(toCol <12) removeUp(board, toCol, true);
+            else          removeDown(board, toCol, true);
             outBlue++;
         }
 
-        // Place Black pawn on the target column
-        if(toCol <12){
-            setUp(board, toCol, 1, false);
-        }
-        else{
-            setDown(board, toCol, 1, false);
-        }
+        // place Black
+        if(toCol <12) setUp(board, toCol, 1, false);
+        else          setDown(board, toCol, 1, false);
 
-        // Handle special spots
         handleQuestionSpot(board, toCol);
         handleSurpriseSpot(board, toCol, false);
-
-        // Remove the used die from availableDice
+        
+        // Use the die
         useDie(usedDie);
 
-        // Check if all dice are used
         if(availableDice.isEmpty()){
             if(blackGameOver()){
                 endGame(Login.player2, "BLACK");
@@ -688,7 +623,6 @@ public class GamePlay extends Pawns {
             return;
         }
 
-        // If still out pawns, re-enter
         if(outBlack >0){
             reEnterBlackPawns(board);
         }
@@ -698,76 +632,262 @@ public class GamePlay extends Pawns {
     }
 
     // --------------------------------------------------------------------------------
-    // Helper Methods for Re-entry and Capturing
+    // Bearing-off logic
     // --------------------------------------------------------------------------------
+    private boolean canBlueBearOff() {
+        // All Blue pawns must be in columns 18..23
+        for (int i = 0; i < 18; i++) {
+            if (blueUp[i] > 0 || blueDown[i] > 0) {
+                return false;
+            }
+        }
+        return true; 
+    }
+
+    private boolean canBlackBearOff() {
+        // All Black pawns must be in columns 0..5
+        for (int i = 6; i < 24; i++) {
+            if (blackUp[i] > 0 || blackDown[i] > 0) {
+                return false;
+            }
+        }
+        return true; 
+    }
 
     /**
-     * Checks if a target column is a valid capture or stack for Blue.
-     *
-     * @param col The target column.
-     * @return True if valid, else False.
+     * Checks if there's any Blue checker above col (col+1..23). 
+     * Used if die > distance to ensure we can't remove from col if higher col is occupied.
      */
+    private boolean blueHasCheckerAbove(int col) {
+        // Because place 1 is col=23 (the highest),
+        // we check all columns from 23 down to col+1.
+        // If any is occupied, we say “yes, there’s a higher checker.”
+        for (int c = 23; c > col; c--) {
+            if (blueUp[c] + blueDown[c] > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * Checks if there's any Black checker above col (col+1..5).
+     */
+    private boolean blackHasCheckerAbove(int col) {
+        for (int c = col+1; c <= 5; c++) {
+            if (blackUp[c] + blackDown[c] > 0) return true;
+        }
+        return false;
+    }
+
+    private void highlightBlueBearingOff(GridPane[] board) {
+        // Only proceed if all Blue checkers are in home (18..23).
+        if (!canBlueBearOff()) return;
+
+        // Loop through columns 18..23
+        for (int col = 18; col <= 23; col++) {
+            int howMany = blueUp[col] + blueDown[col];
+            if (howMany <= 0) continue; // no Blue pawns here
+
+            // distanceNeeded = 24 - col
+            //  col=18 =>6, col=19=>5, col=20=>4, col=21=>3, col=22=>2, col=23=>1
+            int distanceNeeded = 24 - col;
+
+            // Check each die
+            for (Integer die : availableDice) {
+                // 1) If die < distance, skip
+                if (die < distanceNeeded) {
+                    continue; // Not enough to remove from this column
+                }
+
+                // 2) If die == distance => highlight no matter what
+                if (die == distanceNeeded) {
+                    final int usedDie = die;
+                    final int finalCol = col;
+                    board[col].setStyle("-fx-border-color:purple;");
+                    board[col].setOnMouseClicked(e -> {
+                        removeBlue(board, finalCol, 1);
+                        useDie(usedDie);
+
+                        // Check if game is done
+                        if (blueGameOver()) {
+                            endGame(Login.player1, "BLUE");
+                        } else {
+                            highlightAllBlue(board);
+                        }
+                    });
+                }
+                // 3) If die > distance => highlight ONLY IF no larger-distance column is still occupied
+                else {
+                    // e.g. if distanceNeeded=2, but die=4/5/6 => must check distances 3..6
+                    if (noFarthestColumnOccupied(distanceNeeded)) {
+                        final int usedDie = die;
+                        final int finalCol = col;
+                        board[col].setStyle("-fx-border-color:purple;");
+                        board[col].setOnMouseClicked(e -> {
+                            removeBlue(board, finalCol, 1);
+                            useDie(usedDie);
+
+                            if (blueGameOver()) {
+                                endGame(Login.player1, "BLUE");
+                            } else {
+                                highlightAllBlue(board);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * For standard rules:
+     * If 'dist' is 2, we check dist=3..6 => col=21..18 
+     *   to see if they're occupied, because we must remove that piece first if our die >= (that distance).
+     * If any is occupied, we *cannot* remove from the smaller-dist column.
+     */
+    private boolean noFarthestColumnOccupied(int dist) {
+        // Distances: 6..1 => col=18..23 => col=24 - distance
+        // If dist=2, we check dist=3..6 => col=21..18
+        for (int d = dist + 1; d <= 6; d++) {
+            int col = 24 - d;  // e.g. d=3 => col=21, d=6 => col=18
+            // If there's a checker there, that means we need to remove that "farther" column first
+            if (blueUp[col] + blueDown[col] > 0) {
+                return false; 
+            }
+        }
+        return true; 
+    }
+
+
+
+
+
+
+    /**
+     * Real backgammon rule for Black
+     */
+    private void highlightBlackBearingOff(GridPane[] board) {
+        if (!canBlackBearOff()) return;
+
+        for (int col = 0; col <= 5; col++) {
+            int count = blackUp[col] + blackDown[col];
+            if (count <= 0) continue;
+
+            int distanceNeeded = (col - 0) + 1;
+
+            for (Integer die : availableDice) {
+            	if (die < distanceNeeded) {
+                    continue; 
+                } 
+            	if (die == distanceNeeded) {
+                    final int usedDie = die;
+                    final int finalCol = col;
+                    board[col].setStyle("-fx-border-color:purple;");
+                    board[col].setOnMouseClicked(e -> {
+                        removeBlack(board, finalCol, 1);
+                        useDie(usedDie);
+
+                        if (blackGameOver()) {
+                            endGame(Login.player2, "BLACK");
+                        } else {
+                            highlightAllBlack(board);
+                        }
+                    });
+                }
+                else if (die > distanceNeeded) {
+                    if (!blackHasCheckerAbove(col)) {
+                        final int usedDie = die;
+                        final int finalCol = col;
+                        board[col].setStyle("-fx-border-color:purple;");
+                        board[col].setOnMouseClicked(e -> {
+                            removeBlack(board, finalCol, 1);
+                            useDie(usedDie);
+
+                            if (blackGameOver()) {
+                                endGame(Login.player2, "BLACK");
+                            } else {
+                                highlightAllBlack(board);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    private void removeBlue(GridPane[] board, int col, int count) {
+        if (col < 12) {
+            blueUp[col] -= count;
+        } else {
+            blueDown[col] -= count;
+        }
+        int childrenCount = howManyContains(board, col);
+        if (childrenCount > 0) {
+            board[col].getChildren().remove(childrenCount - 1);
+        }
+    }
+
+    private void removeBlack(GridPane[] board, int col, int count) {
+        if (col < 12) {
+            blackUp[col] -= count;
+        } else {
+            blackDown[col] -= count;
+        }
+        int childrenCount = howManyContains(board, col);
+        if (childrenCount > 0) {
+            board[col].getChildren().remove(childrenCount - 1);
+        }
+    }
+
+    // --------------------------------------------------------------------------------
+    // Standard end checks
+    // --------------------------------------------------------------------------------
+    private boolean blueGameOver() {
+        for (int i = 0; i < 24; i++) {
+            if (blueUp[i] > 0 || blueDown[i] > 0) return false;
+        }
+        return outBlue == 0;
+    }
+
+    private boolean blackGameOver() {
+        for (int i = 0; i < 24; i++) {
+            if (blackUp[i] > 0 || blackDown[i] > 0) return false;
+        }
+        return outBlack == 0;
+    }
+
+    // --------------------------------------------------------------------------------
+    // Shared methods / re-entry checks
+    // --------------------------------------------------------------------------------
     private boolean isValidCaptureOrStackForBlue(int col){
         int blacks = gatherBlack()[col];
         int blues  = gatherBlue()[col];
-        // valid if 0 or 1 black, or any number of blue
         return (blacks <=1) || (blues >0);
     }
 
-    /**
-     * Checks if a target column is a valid capture or stack for Black.
-     *
-     * @param col The target column.
-     * @return True if valid, else False.
-     */
     private boolean isValidCaptureOrStackForBlack(int col){
         int blues  = gatherBlue()[col];
         int blacks = gatherBlack()[col];
-        // valid if 0 or 1 blue, or any number of black
         return (blues <=1) || (blacks >0);
     }
 
-    /**
-     * Checks if a die is valid for re-entry for Blue.
-     *
-     * @param die The die value.
-     * @return True if valid, else False.
-     */
     private boolean isValidReEntryDieForBlue(int die){
-        // Re-entry uses only positive dice
-        if(die <=0){
-            return false;
-        }
+        if(die <=0) return false;
         int targetCol = die -1;
         if(targetCol <0 || targetCol >=6) return false;
         return isValidCaptureOrStackForBlue(targetCol);
     }
 
-    /**
-     * Checks if a die is valid for re-entry for Black.
-     *
-     * @param die The die value.
-     * @return True if valid, else False.
-     */
     private boolean isValidReEntryDieForBlack(int die){
-        // Re-entry uses only positive dice
-        if(die <=0){
-            return false;
-        }
+        if(die <=0) return false;
         int targetCol = 24 - die;
         if(targetCol <18 || targetCol >=24) return false;
         return isValidCaptureOrStackForBlack(targetCol);
     }
 
-    // --------------------------------------------------------------------------------
-    // Board arrays
-    // --------------------------------------------------------------------------------
-
-    /**
-     * Gathers the total number of Blue pawns in each column.
-     *
-     * @return An array representing Blue pawns count per column.
-     */
     private int[] gatherBlue(){
         int[] arr = new int[24];
         for(int c=0; c<24; c++){
@@ -776,11 +896,6 @@ public class GamePlay extends Pawns {
         return arr;
     }
 
-    /**
-     * Gathers the total number of Black pawns in each column.
-     *
-     * @return An array representing Black pawns count per column.
-     */
     private int[] gatherBlack(){
         int[] arr = new int[24];
         for(int c=0; c<24; c++){
@@ -789,17 +904,10 @@ public class GamePlay extends Pawns {
         return arr;
     }
 
-    /**
-     * Places a Blue pawn upwards in a column.
-     *
-     * @param columns The game board columns.
-     * @param col     The target column.
-     * @param howMany Number of pawns to place.
-     * @param isBlue  True if Blue, False otherwise.
-     */
+    // Placing / removing
     public void setUp(GridPane[] columns, int col, int howMany, boolean isBlue) {
         int contains = howManyContains(columns, col);
-        int put = Math.max(0, contains); // Ensure `put` is valid
+        int put = Math.max(0, contains);
 
         if (sevenNum[col] > 0) {
             sevenNum[col]--;
@@ -818,22 +926,12 @@ public class GamePlay extends Pawns {
         }
     }
 
-
-    /**
-     * Places a Blue pawn downwards in a column.
-     *
-     * @param columns The game board columns.
-     * @param col     The target column.
-     * @param howMany Number of pawns to place.
-     * @param isBlue  True if Blue, False otherwise.
-     */
     public void setDown(GridPane[] columns, int col, int howMany, boolean isBlue) {
         int contains = howManyContains(columns, col);
-        int put = Math.max(0, 5 - contains); // Ensure `put` is not negative
+        int put = Math.max(0, 5 - contains);
 
         if (sevenNum[col] > 0) {
             sevenNum[col]--;
-            // Handle over-5 stacks if necessary
         } else {
             if (isBlue) {
                 blueDown[col] += howMany;
@@ -849,14 +947,6 @@ public class GamePlay extends Pawns {
         }
     }
 
-
-    /**
-     * Removes a Blue pawn from upwards in a column.
-     *
-     * @param columns The game board columns.
-     * @param col     The column to remove from.
-     * @param isBlue  True if Blue, False otherwise.
-     */
     public void removeUp(GridPane[] columns, int col, boolean isBlue){
         if(sevenNum[col] >0){
             sevenNum[col]--;
@@ -871,13 +961,6 @@ public class GamePlay extends Pawns {
         else       blackUp[col]--;
     }
 
-    /**
-     * Removes a Blue pawn from downwards in a column.
-     *
-     * @param columns The game board columns.
-     * @param col     The column to remove from.
-     * @param isBlue  True if Blue, False otherwise.
-     */
     public void removeDown(GridPane[] columns, int col, boolean isBlue){
         if(sevenNum[col] >0){
             sevenNum[col]--;
@@ -892,13 +975,6 @@ public class GamePlay extends Pawns {
         else       blackDown[col]--;
     }
 
-    /**
-     * Counts how many pawns are present in a column.
-     *
-     * @param columns The game board columns.
-     * @param col     The column to count.
-     * @return The number of pawns in the column.
-     */
     public int howManyContains(GridPane[] columns, int col){
         int counter=0;
         for(Node n : columns[col].getChildren()){
@@ -908,27 +984,7 @@ public class GamePlay extends Pawns {
         return counter;
     }
 
-    // --------------------------------------------------------------------------------
-    // Checking end of game
-    // --------------------------------------------------------------------------------
-    private boolean blueGameOver() {
-        for (int i = 0; i < 24; i++) {
-            if (blueUp[i] > 0 || blueDown[i] > 0) return false;
-        }
-        return outBlue == 0; // Check if no pawns are "out"
-    }
-
-    private boolean blackGameOver() {
-        for (int i = 0; i < 24; i++) {
-            if (blackUp[i] > 0 || blackDown[i] > 0) return false;
-        }
-        return outBlack == 0; // Check if no pawns are "out"
-    }
-
-
-    // --------------------------------------------------------------------------------
     // Times / reset
-    // --------------------------------------------------------------------------------
     public void setTimes(int t){ times = t; }
     public int getTimes(){return times;}
     public void reset(){
@@ -937,40 +993,30 @@ public class GamePlay extends Pawns {
         workIt=true;
     }
 
-    // --------------------------------------------------------------------------------
-    // Questions & Surprises
-    // --------------------------------------------------------------------------------
     public static int[] getQuestions(){return questions;}
 
-    /**
-     * Helper: If Hard, show a random question at start of turn and wait for correct answer.
-     * Returns true if the turn should continue, false if the player lost the turn.
-     * 
-     * @param from Indicates the source of the question ("turn" or "spot").
-     */
+    // Questions / difficulty
     private void promptQuestionEachTurn(String from){
-        if("Hard".equalsIgnoreCase(difficulty)){
-            // Show the question screen and let it handle the turn logic
+        if(!"Easy".equalsIgnoreCase(difficulty)){
+            Random r = new Random();
+            int x = r.nextInt(3)+1;
+            String diff;
+            switch(x){
+                case 1: diff="Easy";break;
+                case 2: diff="Medium";break;
+                default: diff="Hard";break;
+            }
             QuestionScreen qScreen = new QuestionScreen();
-            qScreen.show(mainStage, "Hard", from);
-            // The QuestionScreen handles the startingPlayer flag if the answer was wrong
+            qScreen.show(mainStage, diff, from);
         }
     }
 
-    /**
-     * Handle special question spot.
-     */
     public void handleQuestionSpot(GridPane[] columns, int col){
         for(int q : questions){
             if(q == col){
-                // Handle question spot
                 if("Hard".equalsIgnoreCase(difficulty)){
-                    // Blocking question
                     promptQuestionEachTurn("spot");
-                    // If answered incorrectly, startingPlayer is toggled by QuestionScreen
-                    // No further action needed here
                 } else {
-                    // For non-hard modes, show question without blocking
                     Random r = new Random();
                     int x = r.nextInt(3)+1;
                     String diff;
@@ -987,28 +1033,16 @@ public class GamePlay extends Pawns {
     }
 
     /**
-     * Handles the surprise spot and grants an extra turn to the current player.
-     *
-     * @param columns The game board columns.
-     * @param col     The column where the player landed.
-     * @param isBlue  True if the current player is Blue, False if Black.
-     */
-    /**
-     * Handles the surprise spot and grants an extra turn to the current player.
-     *
-     * @param columns The game board columns.
-     * @param col     The column where the player landed.
-     * @param isBlue  True if the current player is Blue, False if Black.
+     * Surprise => extra turn
      */
     private void handleSurpriseSpot(GridPane[] columns, int col, boolean isBlue) {
-        if (col == surprise) {
+        if (col == surprise && counter==0) {
             System.out.println("Surprise spot reached!");
+			counter++;
 
-            // Display the Surprise Pop-Up
             SurprisePopUp pop = new SurprisePopUp();
             pop.show(mainStage);
 
-            // Set the extra turn flag based on the current player
             if (isBlue) {
                 blueExtraTurnGranted = true;
                 System.out.println("Blue player granted an extra turn.");
@@ -1017,15 +1051,12 @@ public class GamePlay extends Pawns {
                 System.out.println("Black player granted an extra turn.");
             }
 
-            // Ensure that the turn is fully completed before granting the extra turn
-            resetTurnCompletion(); // Mark the turn as incomplete
+            resetTurnCompletion();
             Platform.runLater(() -> waitForTurnCompletion(columns, isBlue));
         }
     }
 
-    
-    private boolean turnComplete = false;
-
+    // Turn completion logic
     private boolean isTurnComplete() {
         return turnComplete;
     }
@@ -1034,58 +1065,39 @@ public class GamePlay extends Pawns {
         this.turnComplete = false;
     }
 
+    private void setTurnComplete() {
+        this.turnComplete = true;
+    }
+
     private boolean hasPawnsToReenter(boolean isBlue) {
         return (isBlue && outBlue > 0) || (!isBlue && outBlack > 0);
     }
 
-    
     private void waitForTurnCompletion(GridPane[] columns, boolean isBlue) {
-        // Declare the timeline locally
         Timeline waitTimeline = new Timeline();
-
-        // Schedule a periodic check to see if the turn is complete
         waitTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(200), event -> {
-            // Check if all dice have been used and no pawns need re-entry
             if (availableDice.isEmpty() && !hasPawnsToReenter(isBlue)) {
-                setTurnComplete(); // Mark the turn as complete
+                setTurnComplete();
                 System.out.println("Current turn completed. Granting extra turn.");
 
-                // Reset the turn completion flag
                 resetTurnCompletion();
-
-                // Trigger the extra turn
                 if (isBlue && blueExtraTurnGranted) {
                     blueExtraTurnGranted = false;
                     System.out.println("Initiating Blue's extra turn.");
-                    // Let the player roll dice manually
                     Backgammon.startingPlayer = true;
                 } else if (!isBlue && blackExtraTurnGranted) {
                     blackExtraTurnGranted = false;
                     System.out.println("Initiating Black's extra turn.");
-                    // Let the player roll dice manually
                     Backgammon.startingPlayer = false;
                 }
-
-                waitTimeline.stop(); // Stop the timeline after the extra turn logic
+                waitTimeline.stop();
             }
         }));
-
-        waitTimeline.setCycleCount(Animation.INDEFINITE); // Keep checking until the turn is complete
+        waitTimeline.setCycleCount(Animation.INDEFINITE);
         waitTimeline.play();
     }
 
-    
-    
-
-
-
-
-
-
-
-    // --------------------------------------------------------------------------------
-    // History
-    // --------------------------------------------------------------------------------
+    // Game history
     public static void addGameToHistory(String p1, String p2, String winner, String diff, int sec){
         List<String> lines = new ArrayList<>();
         try(BufferedReader rdr = new BufferedReader(new FileReader(HISTORY_FILE))){
@@ -1106,7 +1118,8 @@ public class GamePlay extends Pawns {
                 "    \"winner\":\"%s\",\n" +
                 "    \"difficulty\":\"%s\",\n" +
                 "    \"duration\":\"%d seconds\"\n" +
-                "  }",p1,p2,winner,diff,sec);
+                "  }",
+                p1, p2, winner, diff, sec);
         if(lines.size()>1){
             lines.add(",");
         }
@@ -1123,15 +1136,7 @@ public class GamePlay extends Pawns {
         }
     }
 
-    // --------------------------------------------------------------------------------
-    // Shared / Utility Methods
-    // --------------------------------------------------------------------------------
-
-    /**
-     * Clears all styles and mouse click handlers from the board.
-     *
-     * @param board The game board.
-     */
+    // Utility
     private void clearHighlights(GridPane[] board){
         for(int c=0; c<24; c++){
             board[c].setStyle(null);
@@ -1139,21 +1144,10 @@ public class GamePlay extends Pawns {
         }
     }
 
-    /**
-     * Removes a die from the availableDice list after it's used.
-     *
-     * @param die The die value to remove.
-     */
     private void useDie(int die){
         availableDice.remove((Integer) die);
     }
 
-    /**
-     * Displays an alert to the user.
-     *
-     * @param title   The title of the alert.
-     * @param message The message content.
-     */
     private void showAlert(String title, String message){
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle(title);
@@ -1162,30 +1156,13 @@ public class GamePlay extends Pawns {
         alert.showAndWait();
     }
 
-
-    /**
-     * Resets the turn by resetting dice counters and flags.
-     */
     private void resetTurn() {
         countDice = 1;
         played = true;
         workIt = true;
-
-        // Mark the turn as complete
         setTurnComplete();
     }
 
-    private void setTurnComplete() {
-        this.turnComplete = true;
-    }
-
-
-    /**
-     * Ends the game, declaring the winner and updating history.
-     *
-     * @param winnerName The name of the winner.
-     * @param colorStr   The color representing the winner.
-     */
     private void endGame(String winnerName, String colorStr){
         try{
             Backgammon.stopTimer();
@@ -1202,121 +1179,12 @@ public class GamePlay extends Pawns {
             ex.printStackTrace();
         }
     }
-    
-    private boolean canBlueBearOff() {
-        for (int i = 0; i < 18; i++) {
-            if (blueUp[i] > 0 || blueDown[i] > 0) {
-                return false; // Blue pawns still outside the home area
-            }
-        }
-        return true; // All Blue pawns are in the home area
-    }
 
-    private boolean canBlackBearOff() {
-        for (int i = 6; i < 24; i++) {
-            if (blackUp[i] > 0 || blackDown[i] > 0) {
-                return false; // Black pawns still outside the home area
-            }
-        }
-        return true; // All Black pawns are in the home area
-    }
-    
-    private void highlightBlueBearingOff(GridPane[] board) {
-        // Highlight only if eligible
-        if (!canBlueBearOff()) return;
-
-        for (Integer die : availableDice) {
-            int targetIndex = 23 - (die - 1); // Calculate bearing-off index
-            if (targetIndex >= 18 && targetIndex <= 23 && gatherBlue()[targetIndex] > 0) {
-                board[targetIndex].setStyle("-fx-border-color:purple;");
-                final int usedDie = die;
-                final int fromCol = targetIndex;
-
-                board[targetIndex].setOnMouseClicked(e -> {
-                    // Perform bearing-off
-                    removeBlue(board, fromCol, 1);
-                    useDie(usedDie);
-
-                    // Check if game is over
-                    if (blueGameOver()) {
-                        endGame(Login.player1, "BLUE");
-                    } else {
-                        // Continue turn
-                        highlightAllBlue(board);
-                    }
-                });
-            }
-        }
-    }
-    
-    private void removeBlue(GridPane[] board, int col, int count) {
-        // Remove `count` pawns from the column for Blue
-        if (col < 12) {
-            blueUp[col] -= count;
-        } else {
-            blueDown[col] -= count;
-        }
-
-        // Remove the visual representation from the board
-        int childrenCount = howManyContains(board, col);
-        if (childrenCount > 0) {
-            board[col].getChildren().remove(childrenCount - 1); // Remove topmost pawn
-        }
-    }
-    
-    private void removeBlack(GridPane[] board, int col, int count) {
-        // Remove `count` pawns from the column for Black
-        if (col < 12) {
-            blackUp[col] -= count;
-        } else {
-            blackDown[col] -= count;
-        }
-
-        // Remove the visual representation from the board
-        int childrenCount = howManyContains(board, col);
-        if (childrenCount > 0) {
-            board[col].getChildren().remove(childrenCount - 1); // Remove topmost pawn
-        }
-    }
-
-
-
-    private void highlightBlackBearingOff(GridPane[] board) {
-        if (!canBlackBearOff()) return;
-
-        for (Integer die : availableDice) {
-            int targetIndex = die - 1; // Calculate bearing-off index
-            if (targetIndex >= 0 && targetIndex <= 5 && gatherBlack()[targetIndex] > 0) {
-                board[targetIndex].setStyle("-fx-border-color:purple;");
-                final int usedDie = die;
-                final int fromCol = targetIndex;
-
-                board[targetIndex].setOnMouseClicked(e -> {
-                    // Perform bearing-off
-                    removeBlack(board, fromCol, 1);
-                    useDie(usedDie);
-
-                    // Check if game is over
-                    if (blackGameOver()) {
-                        endGame(Login.player2, "BLACK");
-                    } else {
-                        // Continue turn
-                        highlightAllBlack(board);
-                    }
-                });
-            }
-        }
-    }
-    
+    // Accessors
     public int[] getBlueUp() {
         return blueUp;
     }
     public int[] getBlackDown() {
         return blackDown;
     }
-    
-
 }
-
-
-//THIS IS THE SHIT!!!!!!!!!!!

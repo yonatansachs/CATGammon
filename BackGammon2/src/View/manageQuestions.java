@@ -28,7 +28,7 @@ public class manageQuestions extends Application {
     private ComboBox<String> difficultyField;
 
     // Define the correct path to questions.json (same as SysData)
-    private final String QUESTIONS_FILE = "questions.json"; // Ensure this is the correct path
+    private final String QUESTIONS_FILE = "src/View/questions.json"; // Ensure this is the correct path
 
     public static void main(String[] args) {
         launch(args);

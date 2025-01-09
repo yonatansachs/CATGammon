@@ -187,6 +187,8 @@ public class QuestionScreen {
 }*/
 package View;
 
+import java.util.Random;
+
 import Control.GamePlay;
 import Model.Question;
 import Model.SysData;
@@ -209,10 +211,12 @@ public class QuestionScreen {
 
     private final SysData sysData = SysData.getInstance(); // Singleton SysData
     private boolean answeredCorrectly;
+    public String gameDifficulty = Backgammon.difficulty;
 
-    public boolean show(Stage owner, String difficulty, String from) {
+    public boolean show(Stage owner, String difficulty2, String from) {
         // Fetch a random question based on the given difficulty
-        Question randomQuestion = sysData.getRandomQuestion(difficulty);
+    	 
+        Question randomQuestion = sysData.getRandomQuestion(difficulty2);
         if (randomQuestion == null) {
             showError("No questions available for the selected difficulty.");
             return true; // Allow the game to continue if no question is available
@@ -231,7 +235,7 @@ public class QuestionScreen {
         backgroundImageView.setEffect(new GaussianBlur(50));
 
         // Title Label
-        Label titleLabel = new Label("Question: " + difficulty);
+        Label titleLabel = new Label("Question: " + difficulty2);
         titleLabel.setStyle("-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 20;");
         titleLabel.setAlignment(Pos.CENTER);
 
@@ -263,7 +267,7 @@ public class QuestionScreen {
                     showCorrectMessage(questionStage);
                 } else {
                     answeredCorrectly = false;
-                    showWrongMessage(questionStage, from, difficulty);
+                    showWrongMessage(questionStage, from, gameDifficulty);
                 }
             });
 
@@ -307,20 +311,24 @@ public class QuestionScreen {
         alert.setTitle("Wrong!");
         alert.setHeaderText(null);
 
-        if ("Hard".equalsIgnoreCase(difficulty)) {
-            if ("turn".equalsIgnoreCase(from)) {
+    
+            if ("Hard".equalsIgnoreCase(difficulty)&&"turn".equalsIgnoreCase(from)) {
                 alert.setContentText("Oops! That is not the correct answer. You lose your turn.");
-                alert.showAndWait();
-                questionStage.close(); // End turn
-            } else if ("spot".equalsIgnoreCase(from)) {
+                if(Backgammon.startingPlayer)
+                {
+                	Backgammon.startingPlayer = false;
+                }
+                else
+                	Backgammon.startingPlayer = true;
+               
+            } 
+            else if ("spot".equalsIgnoreCase(from)) {
                 alert.setContentText("Oops! That is not the correct answer. Try again.");
-                alert.showAndWait(); // Keep window open
-            }
-        } else {
+            
+        } else 
             alert.setContentText("Oops! That is not the correct answer. You can continue your turn.");
-            alert.showAndWait();
-            questionStage.close(); // Allow continuation
-        }
+           alert.showAndWait();
+        
     }
 
     private void showError(String message) {
