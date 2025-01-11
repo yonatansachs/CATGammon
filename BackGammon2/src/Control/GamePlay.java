@@ -5,31 +5,34 @@ import View.Login;
 import View.QuestionScreen;
 import View.SurprisePopUp;
 import application.Backgammon;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.geometry.Pos;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.application.Platform;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.Scene;
 
-import java.awt.Label;
 import java.io.*;
 import java.util.*;
 
 /**
- * GamePlay class that:
+ * Updated GamePlay class that:
  *   1) Asks a question each turn if difficulty == "Hard".
  *   2) Forces re-entry of eaten pawns before any other moves.
  *   3) Supports negative dice, capturing single pawns, etc.
- *   4) When a pawn is clicked, only the remaining valid dice will be available as options.
+ *   4) Displays up to 5 pawns per column, with a 6th circle+label if there's overflow.
+ *   5) Places "down" pawns at rows 5->0 so they appear visually at the bottom.
+ *   6) Restores getBlueUp,getBlueDown,getBlackUp,getBlackDown.
  */
 public class GamePlay extends Pawns {
 
@@ -40,7 +43,7 @@ public class GamePlay extends Pawns {
     // Extra turn flags
     private boolean blueExtraTurnGranted = false;
     private boolean blackExtraTurnGranted = false;
-    private int counter =0;
+    private int counter = 0;
 
     // Pawns in each column (0..23)
     private final int[] blueUp   = new int[24];
@@ -48,10 +51,10 @@ public class GamePlay extends Pawns {
     private final int[] blackUp  = new int[24];
     private final int[] blackDown= new int[24];
 
-    // Over-5 stacks
+    // If >5 pawns in a column, how many are "overflow"
     private final int[] sevenNum = new int[24];
 
-    // Pawns "out"
+    // Pawns "out" (eaten)
     private int outBlue  = 0;
     private int outBlack = 0;
 
@@ -243,7 +246,7 @@ public class GamePlay extends Pawns {
                     
                     // place Blue
                     if(finalToCol < 12) setUp(board, finalToCol, 1, true);
-                    else               setDown(board, finalToCol, 1, true);
+                    else                setDown(board, finalToCol, 1, true);
 
                     handleQuestionSpot(board, finalToCol);
                     handleSurpriseSpot(board, finalToCol, true);
@@ -283,7 +286,7 @@ public class GamePlay extends Pawns {
         for (int col = 0; col < 24; col++) {
             int count = blues[col];
             if (count > 0) {
-                // if col is 18..23 and EXACT die matches => we skip normal highlight 
+                // if col is 18..23 and EXACT die matches => skip normal highlight 
                 // because we want the user to remove, not move, if they click it.
                 if (col >= 18 && col <= 23 && canRemoveExactDistanceBlue(col)) {
                     continue;
@@ -307,7 +310,6 @@ public class GamePlay extends Pawns {
         }
     }
 
-    // If there's any die EXACTly matching the distance for BLUE => skip normal highlight
     private boolean canRemoveExactDistanceBlue(int col) {
         int needed = (23 - col) + 1;
         for (int die : availableDice) {
@@ -354,7 +356,6 @@ public class GamePlay extends Pawns {
         return validDice;
     }
 
-    // Important: we call highlightAllBlue after using a die, so the bear-off options are recalculated
     private void moveBlue(GridPane[] board, int fromCol, int toCol, int usedDie){
         clearHighlights(board);
 
@@ -394,7 +395,6 @@ public class GamePlay extends Pawns {
             reEnterBluePawns(board);
         }
         else{
-            // Re-highlight so the bear-off option is gone if we used that die for a normal move
             highlightAllBlue(board);
         }
     }
@@ -542,7 +542,6 @@ public class GamePlay extends Pawns {
         }
     }
 
-    // If there's any die EXACTly matching the distance for Black => skip normal highlight
     private boolean canRemoveExactDistanceBlack(int col) {
         int needed = (col - 0) + 1;
         for (int die : availableDice) {
@@ -589,7 +588,6 @@ public class GamePlay extends Pawns {
         return validDice;
     }
 
-    // Important: re-run highlightAllBlack after using a die for a normal move
     private void moveBlack(GridPane[] board, int fromCol, int toCol, int usedDie){
         clearHighlights(board);
 
@@ -635,7 +633,6 @@ public class GamePlay extends Pawns {
     // Bearing-off logic
     // --------------------------------------------------------------------------------
     private boolean canBlueBearOff() {
-        // All Blue pawns must be in columns 18..23
         for (int i = 0; i < 18; i++) {
             if (blueUp[i] > 0 || blueDown[i] > 0) {
                 return false;
@@ -645,7 +642,6 @@ public class GamePlay extends Pawns {
     }
 
     private boolean canBlackBearOff() {
-        // All Black pawns must be in columns 0..5
         for (int i = 6; i < 24; i++) {
             if (blackUp[i] > 0 || blackDown[i] > 0) {
                 return false;
@@ -654,14 +650,7 @@ public class GamePlay extends Pawns {
         return true; 
     }
 
-    /**
-     * Checks if there's any Blue checker above col (col+1..23). 
-     * Used if die > distance to ensure we can't remove from col if higher col is occupied.
-     */
     private boolean blueHasCheckerAbove(int col) {
-        // Because place 1 is col=23 (the highest),
-        // we check all columns from 23 down to col+1.
-        // If any is occupied, we say “yes, there’s a higher checker.”
         for (int c = 23; c > col; c--) {
             if (blueUp[c] + blueDown[c] > 0) {
                 return true;
@@ -670,10 +659,6 @@ public class GamePlay extends Pawns {
         return false;
     }
 
-
-    /**
-     * Checks if there's any Black checker above col (col+1..5).
-     */
     private boolean blackHasCheckerAbove(int col) {
         for (int c = col+1; c <= 5; c++) {
             if (blackUp[c] + blackDown[c] > 0) return true;
@@ -682,26 +667,17 @@ public class GamePlay extends Pawns {
     }
 
     private void highlightBlueBearingOff(GridPane[] board) {
-        // Only proceed if all Blue checkers are in home (18..23).
         if (!canBlueBearOff()) return;
 
-        // Loop through columns 18..23
         for (int col = 18; col <= 23; col++) {
             int howMany = blueUp[col] + blueDown[col];
-            if (howMany <= 0) continue; // no Blue pawns here
+            if (howMany <= 0) continue;
 
-            // distanceNeeded = 24 - col
-            //  col=18 =>6, col=19=>5, col=20=>4, col=21=>3, col=22=>2, col=23=>1
             int distanceNeeded = 24 - col;
-
-            // Check each die
             for (Integer die : availableDice) {
-                // 1) If die < distance, skip
                 if (die < distanceNeeded) {
-                    continue; // Not enough to remove from this column
+                    continue;
                 }
-
-                // 2) If die == distance => highlight no matter what
                 if (die == distanceNeeded) {
                     final int usedDie = die;
                     final int finalCol = col;
@@ -710,7 +686,6 @@ public class GamePlay extends Pawns {
                         removeBlue(board, finalCol, 1);
                         useDie(usedDie);
 
-                        // Check if game is done
                         if (blueGameOver()) {
                             endGame(Login.player1, "BLUE");
                         } else {
@@ -718,9 +693,7 @@ public class GamePlay extends Pawns {
                         }
                     });
                 }
-                // 3) If die > distance => highlight ONLY IF no larger-distance column is still occupied
                 else {
-                    // e.g. if distanceNeeded=2, but die=4/5/6 => must check distances 3..6
                     if (noFarthestColumnOccupied(distanceNeeded)) {
                         final int usedDie = die;
                         final int finalCol = col;
@@ -741,34 +714,16 @@ public class GamePlay extends Pawns {
         }
     }
 
-
-    /**
-     * For standard rules:
-     * If 'dist' is 2, we check dist=3..6 => col=21..18 
-     *   to see if they're occupied, because we must remove that piece first if our die >= (that distance).
-     * If any is occupied, we *cannot* remove from the smaller-dist column.
-     */
     private boolean noFarthestColumnOccupied(int dist) {
-        // Distances: 6..1 => col=18..23 => col=24 - distance
-        // If dist=2, we check dist=3..6 => col=21..18
         for (int d = dist + 1; d <= 6; d++) {
-            int col = 24 - d;  // e.g. d=3 => col=21, d=6 => col=18
-            // If there's a checker there, that means we need to remove that "farther" column first
+            int col = 24 - d;
             if (blueUp[col] + blueDown[col] > 0) {
-                return false; 
+                return false;
             }
         }
         return true; 
     }
 
-
-
-
-
-
-    /**
-     * Real backgammon rule for Black
-     */
     private void highlightBlackBearingOff(GridPane[] board) {
         if (!canBlackBearOff()) return;
 
@@ -777,7 +732,6 @@ public class GamePlay extends Pawns {
             if (count <= 0) continue;
 
             int distanceNeeded = (col - 0) + 1;
-
             for (Integer die : availableDice) {
             	if (die < distanceNeeded) {
                     continue; 
@@ -821,24 +775,24 @@ public class GamePlay extends Pawns {
     private void removeBlue(GridPane[] board, int col, int count) {
         if (col < 12) {
             blueUp[col] -= count;
+            if (blueUp[col] < 0) blueUp[col] = 0;
+            setUp(board, col, 0, true);
         } else {
             blueDown[col] -= count;
-        }
-        int childrenCount = howManyContains(board, col);
-        if (childrenCount > 0) {
-            board[col].getChildren().remove(childrenCount - 1);
+            if (blueDown[col] < 0) blueDown[col] = 0;
+            setDown(board, col, 0, true);
         }
     }
 
     private void removeBlack(GridPane[] board, int col, int count) {
         if (col < 12) {
             blackUp[col] -= count;
+            if (blackUp[col] < 0) blackUp[col] = 0;
+            setUp(board, col, 0, false);
         } else {
             blackDown[col] -= count;
-        }
-        int childrenCount = howManyContains(board, col);
-        if (childrenCount > 0) {
-            board[col].getChildren().remove(childrenCount - 1);
+            if (blackDown[col] < 0) blackDown[col] = 0;
+            setDown(board, col, 0, false);
         }
     }
 
@@ -904,83 +858,139 @@ public class GamePlay extends Pawns {
         return arr;
     }
 
-    // Placing / removing
-    public void setUp(GridPane[] columns, int col, int howMany, boolean isBlue) {
-        int contains = howManyContains(columns, col);
-        int put = Math.max(0, contains);
+    // ====================== ADD/REMOVE USING sevenNum[] =========================
 
-        if (sevenNum[col] > 0) {
-            sevenNum[col]--;
+    /**
+     * Places 'howMany' new pawns for top columns (0..11).
+     * If total > 5, store the overflow in sevenNum[], then place a 6th circle+label.
+     */
+    public void setUp(GridPane[] col, int column, int howMany, boolean isBlue){
+        // 1) Increase counters
+        if (isBlue) {
+            blueUp[column] += howMany;
         } else {
-            if (isBlue) {
-                blueUp[col] += howMany;
-                if (put >= 0) {
-                    columns[col].add(pawn.createPawn(true), 0, put);
-                }
-            } else {
-                blackUp[col] += howMany;
-                if (put >= 0) {
-                    columns[col].add(pawn.createPawn(false), 0, put);
-                }
-            }
+            blackUp[column] += howMany;
         }
-    }
 
-    public void setDown(GridPane[] columns, int col, int howMany, boolean isBlue) {
-        int contains = howManyContains(columns, col);
-        int put = Math.max(0, 5 - contains);
+        // 2) Clear children
+        col[column].getChildren().clear();
 
-        if (sevenNum[col] > 0) {
-            sevenNum[col]--;
+        // 3) Figure out total
+        int total = isBlue ? blueUp[column] : blackUp[column];
+
+        // 4) If total > 5 => store overflow
+        if (total > 5) {
+            sevenNum[column] = total - 5;
         } else {
-            if (isBlue) {
-                blueDown[col] += howMany;
-                if (put >= 0) {
-                    columns[col].add(pawn.createPawn(true), 0, put);
-                }
-            } else {
-                blackDown[col] += howMany;
-                if (put >= 0) {
-                    columns[col].add(pawn.createPawn(false), 0, put);
-                }
-            }
+            sevenNum[column] = 0;
+        }
+
+        // 5) Place up to 5 circles from row=0 up to row=4
+        //    (since these are top columns, row=0 is visually at the top in default GridPane)
+        int circlesToDraw = Math.min(total, 5);
+        for (int i = 0; i < circlesToDraw; i++){
+            col[column].add(pawn.createPawn(isBlue), 0, i);
+        }
+
+        // 6) If there's overflow, place a 6th circle + label at row=5
+        if (sevenNum[column] > 0) {
+            Label title = new Label(String.valueOf(total));
+            title.setMaxWidth(Double.MAX_VALUE);
+            title.setAlignment(Pos.CENTER);
+            title.setStyle("-fx-text-fill: white;"+
+                           "-fx-font-family: 'Times New Roman';" +
+                           "-fx-font-style: italic;" +
+                           "-fx-font-size: 45px;");
+
+            col[column].add(pawn.createPawn(isBlue), 0, 5);
+            col[column].add(title, 0, 5);
         }
     }
 
-    public void removeUp(GridPane[] columns, int col, boolean isBlue){
-        if(sevenNum[col] >0){
-            sevenNum[col]--;
+    /**
+     * Places 'howMany' new pawns for bottom columns (12..23).
+     * Now we place them from row=5 down to 0, so they appear visually at the bottom.
+     */
+    public void setDown(GridPane[] col, int column, int howMany, boolean isBlue){
+        // 1) Increase counters
+        if (isBlue) {
+            blueDown[column] += howMany;
+        } else {
+            blackDown[column] += howMany;
         }
-        else{
-            int c = howManyContains(columns,col);
-            if(c >0){
-                columns[col].getChildren().remove(c-1);
-            }
+
+        // 2) Clear children
+        col[column].getChildren().clear();
+
+        // 3) Figure out total
+        int total = isBlue ? blueDown[column] : blackDown[column];
+
+        // 4) Overflow logic
+        if (total > 5) {
+            sevenNum[column] = total - 5;
+        } else {
+            sevenNum[column] = 0;
         }
-        if(isBlue) blueUp[col]--;
-        else       blackUp[col]--;
+
+        // 5) Place up to 5 circles, starting from row=5 down to row=1
+        //    for i in [0..4], place at row = 5 - i
+        int circlesToDraw = Math.min(total, 5);
+        for (int i = 0; i < circlesToDraw; i++){
+            col[column].add(pawn.createPawn(isBlue), 0, 5 - i);
+        }
+
+        // 6) If overflow, place 6th circle+label at row=0
+        if (sevenNum[column] > 0) {
+            Label title = new Label(String.valueOf(total));
+            title.setMaxWidth(Double.MAX_VALUE);
+            title.setAlignment(Pos.CENTER);
+            title.setStyle("-fx-text-fill: white;"+
+                           "-fx-font-family: 'Times New Roman';" +
+                           "-fx-font-style: italic;" +
+                           "-fx-font-size: 45px;");
+
+            col[column].add(pawn.createPawn(isBlue), 0, 0);
+            col[column].add(title, 0, 0);
+        }
     }
 
-    public void removeDown(GridPane[] columns, int col, boolean isBlue){
-        if(sevenNum[col] >0){
-            sevenNum[col]--;
+    /**
+     * removeUp: remove one from top side, re-draw via setUp(..., 0, ...).
+     */
+    public void removeUp(GridPane[] col, int column, boolean isBlue){
+        if (isBlue) {
+            blueUp[column]--;
+            if (blueUp[column] < 0) blueUp[column] = 0;
+        } else {
+            blackUp[column]--;
+            if (blackUp[column] < 0) blackUp[column] = 0;
         }
-        else{
-            int c = howManyContains(columns,col);
-            if(c >0){
-                columns[col].getChildren().remove(c-1);
-            }
-        }
-        if(isBlue) blueDown[col]--;
-        else       blackDown[col]--;
+        // Re-draw
+        setUp(col, column, 0, isBlue);
     }
 
+    /**
+     * removeDown: remove one from bottom side, re-draw via setDown(..., 0, ...).
+     */
+    public void removeDown(GridPane[] col, int column, boolean isBlue){
+        if (isBlue) {
+            blueDown[column]--;
+            if (blueDown[column] < 0) blueDown[column] = 0;
+        } else {
+            blackDown[column]--;
+            if (blackDown[column] < 0) blackDown[column] = 0;
+        }
+        // Re-draw
+        setDown(col, column, 0, isBlue);
+    }
+
+    // howManyContains (optional)
     public int howManyContains(GridPane[] columns, int col){
         int counter=0;
         for(Node n : columns[col].getChildren()){
             if(n instanceof Circle) counter++;
+            else if(n instanceof Label) counter++;
         }
-        if(sevenNum[col]>0) return sevenNum[col]+6;
         return counter;
     }
 
@@ -1035,10 +1045,10 @@ public class GamePlay extends Pawns {
     /**
      * Surprise => extra turn
      */
-    private void handleSurpriseSpot(GridPane[] columns, int col, boolean isBlue) {
+    public void handleSurpriseSpot(GridPane[] columns, int col, boolean isBlue) {
         if (col == surprise && counter==0) {
             System.out.println("Surprise spot reached!");
-			counter++;
+            counter++;
 
             SurprisePopUp pop = new SurprisePopUp();
             pop.show(mainStage);
@@ -1180,9 +1190,15 @@ public class GamePlay extends Pawns {
         }
     }
 
-    // Accessors
+    // RESTORED GETTERS
     public int[] getBlueUp() {
         return blueUp;
+    }
+    public int[] getBlueDown() {
+        return blueDown;
+    }
+    public int[] getBlackUp() {
+        return blackUp;
     }
     public int[] getBlackDown() {
         return blackDown;

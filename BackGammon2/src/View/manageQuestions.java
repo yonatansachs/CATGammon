@@ -278,7 +278,7 @@ public class manageQuestions extends Application {
     private void saveQuestions() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(QUESTIONS_FILE))) {
             writer.write(questionsToJson());
-            showAlert(Alert.AlertType.INFORMATION, "Success", "Questions saved successfully.");
+            showAlert(Alert.AlertType.INFORMATION, "Success", "Questions file updated successfully.");
         } catch (IOException e) {
             System.err.println("Failed to save questions: " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to save questions.");
