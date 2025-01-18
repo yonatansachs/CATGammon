@@ -1,4 +1,4 @@
-package application;
+/*package application;
 
 import java.util.Random;
 
@@ -26,10 +26,11 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-/**
- * Main Backgammon class. Calls GamePlay for board logic and
- * sets up UI. Dice in Hard mode can be -3..6 (negative means move backward).
- */
+
+ // Main Backgammon class. Calls GamePlay for board logic and
+ // sets up UI. Dice in Hard mode can be -3..6 (negative means move backward).
+ 
+
 public class Backgammon extends Application {
 
     public static int secondsElapsed = 0;
@@ -178,9 +179,10 @@ public class Backgammon extends Application {
         primaryStage.show();
     }
 
-    /**
-     * rollDice with Hard mode = -3..6 (no re-roll).
-     */
+    
+     // rollDice with Hard mode = -3..6 (no re-roll).
+     
+
     private static final int[] HARD_DICE_VALUES = {-3, -2, -1, 1, 2, 3, 4, 5, 6};
     public static int rollDice(String difficulty) {
     	Random rand = new Random();
@@ -278,5 +280,259 @@ public class Backgammon extends Application {
     
     public String getDifficulty() {
     	return difficulty;
+    }
+}
+*/
+
+package application;
+
+import java.util.Random;
+
+import Control.GamePlay;
+import View.Firstlayer;
+import View.Login;
+import View.QuestionScreen;
+import View.SecondLayer;
+import View.SurprisePopUp;
+import View.WhoStarts;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+import javafx.util.Duration;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+
+
+/**
+ * Main Backgammon class. Uses Builder Pattern for board construction.
+ */
+public class Backgammon extends Application {
+
+    public static int secondsElapsed = 0;
+    private static Timeline timeline;
+
+    public static String difficulty = "Easy"; // default
+    public static boolean startingPlayer = true; // who starts (true = player1)
+
+    Label timerLabel = new Label("Time: 0s");
+    public static GamePlay theGame;
+    private static Label one = new Label("?");
+    private static Label two = new Label("?");
+
+    public static Label getOne() {
+        return one;
+    }
+
+    public static Label getTwo() {
+        return two;
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        System.out.println("ENTERING START METHOD (difficulty=" + difficulty + ")");
+
+        startTimer();
+
+        // Build the game board using Builder Pattern
+        BoardBuilder boardBuilder = new BoardBuilder();
+        Pane board = boardBuilder
+                .setBoardColor(Color.LIGHTBLUE)
+                .addBackground()
+                .buildGrid()
+                .build();
+
+        // Add first layer (board design)
+        Firstlayer first = new Firstlayer(primaryStage);
+        board.getChildren().addAll(first.getBoard());
+
+        // Build GridPane array for 24 columns
+        GridPane[] gridCols = new GridPane[24];
+        for (int i = 0; i < 12; i++) {
+            SecondLayer up = new SecondLayer();
+            gridCols[i] = up.setLayoutUp(i);
+            board.getChildren().add(gridCols[i]);
+        }
+        for (int i = 12; i < 24; i++) {
+            SecondLayer down = new SecondLayer();
+            gridCols[i] = down.setLayoutDown(i);
+            board.getChildren().add(gridCols[i]);
+        }
+
+        // Create the GamePlay logic
+        theGame = new GamePlay(gridCols, primaryStage, difficulty);
+
+        // Determine who starts via WhoStarts screen (dice)
+        WhoStarts whoStartsScreen = new WhoStarts();
+        startingPlayer = whoStartsScreen.determineStartingPlayer(primaryStage);
+
+        // Figure out actual names or fallback
+        String p1Name = (Login.player1 == null || Login.player1.trim().isEmpty())
+                ? "Player1" : Login.player1;
+        String p2Name = (Login.player2 == null || Login.player2.trim().isEmpty())
+                ? "Player2" : Login.player2;
+
+        String starter = startingPlayer ? p1Name : p2Name;
+        System.out.println("Starting Player: " + starter);
+
+        initializeGame(primaryStage, starter);
+
+        // Timer label
+        timerLabel.setLayoutX(950);
+        timerLabel.setLayoutY(0);
+        timerLabel.setPrefSize(150, 30);
+        board.getChildren().add(timerLabel);
+
+        // Dice button
+        Button diceBtn = createDiceButton(p1Name, p2Name, gridCols);
+        board.getChildren().addAll(diceBtn, one, two);
+
+        // Place question/surprise visuals
+        placeQuestionMarks(gridCols, board);
+        placeSurprise(gridCols, board);
+
+        Scene scene = new Scene(board, 1100, 800);
+        primaryStage.setTitle("Backgammon");
+        primaryStage.setScene(scene);
+        primaryStage.setMaxHeight(800);
+        primaryStage.setMaxWidth(1100);
+        primaryStage.setMinHeight(800);
+        primaryStage.setMinWidth(1100);
+        primaryStage.setResizable(false);
+        primaryStage.show();
+    }
+
+    private Button createDiceButton(String p1Name, String p2Name, GridPane[] gridCols) {
+        Button diceBtn = new Button("Roll Dice 🎲");
+        diceBtn.setLayoutX(10);
+        diceBtn.setLayoutY(5);
+        diceBtn.setPrefSize(150, 30);
+        diceBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px;");
+
+        
+        one.setFont(Font.font(null, FontWeight.BOLD, 72));
+        two.setFont(Font.font(null, FontWeight.BOLD, 72));
+
+        one.setLayoutX(528);
+        one.setLayoutY(360);
+        one.setStyle("-fx-text-fill: white;");
+        two.setLayoutX(528);
+        two.setLayoutY(290);
+        two.setStyle("-fx-text-fill: white;");
+        
+        diceBtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                int dice1 = rollDice(difficulty);
+                int dice2 = rollDice(difficulty);
+
+                one.setText(String.valueOf(dice1));
+                two.setText(String.valueOf(dice2));
+                if (startingPlayer) {
+                    if (dice1 == dice2) theGame.setTimes(4);
+                    diceBtn.setText(p2Name + "'s Turn 🎲");
+                    theGame.reset();
+                    theGame.bluePlays(gridCols, dice1, dice2);
+                    startingPlayer = false;
+                } else {
+                    if (dice1 == dice2) theGame.setTimes(4);
+                    diceBtn.setText(p1Name + "'s Turn 🎲");
+                    theGame.reset();
+                    theGame.blackPlays(gridCols, dice1, dice2);
+                    startingPlayer = true;
+                }
+            }
+        });
+
+        return diceBtn;
+    }
+
+    private void initializeGame(Stage primaryStage, String starterName) {
+        System.out.println("Initializing game with starting player: " + starterName);
+        primaryStage.setTitle("Backgammon - " + starterName + " starts!");
+    }
+
+    private static final int[] HARD_DICE_VALUES = {-3, -2, -1, 1, 2, 3, 4, 5, 6};
+
+    public static int rollDice(String difficulty) {
+        Random rand = new Random();
+        if ("Hard".equalsIgnoreCase(difficulty)) {
+            int index = rand.nextInt(HARD_DICE_VALUES.length);
+            return HARD_DICE_VALUES[index];
+        } else {
+            return rand.nextInt(6) + 1;
+        }
+    }
+
+    public void placeQuestionMarks(GridPane[] gridCols, Pane parentPane) {
+        int[] questions = GamePlay.getQuestions();
+        for (int spot : questions) {
+            if (spot != -1) {
+                Label qm = new Label("?");
+                qm.setStyle("-fx-text-fill: purple; -fx-font-size: 72;");
+
+                double layoutX = SecondLayer.cols[spot];
+                double layoutY = (spot < 12) ? 10 : 630;
+                qm.setLayoutX(layoutX);
+                qm.setLayoutY(layoutY);
+
+                parentPane.getChildren().add(qm);
+            }
+        }
+    }
+
+    public void placeSurprise(GridPane[] gridCols, Pane parentPane) {
+        Label surprise = new Label("🎁");
+        surprise.setStyle("-fx-text-fill: purple; -fx-font-size: 60;");
+
+        int gridIndex = GamePlay.surprise;
+        double layoutX = SecondLayer.cols[gridIndex];
+        double layoutY = (gridIndex < 12) ? 10 : 630;
+
+        surprise.setLayoutX(layoutX);
+        surprise.setLayoutY(layoutY);
+
+        parentPane.getChildren().add(surprise);
+    }
+
+    public void startTimer() {
+        KeyFrame keyFrame = new KeyFrame(Duration.seconds(1), e -> {
+            secondsElapsed++;
+            int mins = secondsElapsed / 60;
+            int secs = secondsElapsed % 60;
+            timerLabel.setText(String.format("Time: %02d:%02d", mins, secs));
+        });
+        timeline = new Timeline(keyFrame);
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
+    }
+
+    public static void stopTimer() {
+        if (timeline != null) {
+            timeline.stop();
+            System.out.println("Final elapsed time: " + secondsElapsed + " seconds");
+        }
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    public void setDifficulty(String selectedDifficulty) {
+        if (selectedDifficulty != null && !selectedDifficulty.trim().isEmpty()) {
+            this.difficulty = selectedDifficulty;
+        }
+    }
+
+    public String getDifficulty() {
+        return difficulty;
     }
 }

@@ -14,7 +14,7 @@ public class SecondLayer{
     private int heightC=51;
     private int heightR=50;
     
-    public final double[] cols = {
+    public static final double[] cols = {
         48,
         128,
         212,
