@@ -317,8 +317,6 @@ import javafx.scene.text.FontWeight;
  */
 public class Backgammon extends Application {
 
-    public static int secondsElapsed = 0;
-    private static Timeline timeline;
 
     public static String difficulty = "Easy"; // default
     public static boolean startingPlayer = true; // who starts (true = player1)
@@ -337,10 +335,23 @@ public class Backgammon extends Application {
         return two;
     }
 
+    
+    private static EventManager eventManager = new EventManager("diceRolled", "timerUpdated");
+
+    public static int secondsElapsed = 0;
+    private static Timeline timeline;
+    
     @Override
     public void start(Stage primaryStage) {
         System.out.println("ENTERING START METHOD (difficulty=" + difficulty + ")");
 
+        
+        TimerObserver timerObserver = new TimerObserver(timerLabel);
+        eventManager.subscribe("timerUpdated", timerObserver);
+
+        DiceObserver diceObserver = new DiceObserver(one, two);
+        eventManager.subscribe("diceRolled", diceObserver);
+        
         startTimer();
 
         // Build the game board using Builder Pattern
@@ -411,7 +422,7 @@ public class Backgammon extends Application {
         primaryStage.show();
     }
 
-    private Button createDiceButton(String p1Name, String p2Name, GridPane[] gridCols) {
+   /* private Button createDiceButton(String p1Name, String p2Name, GridPane[] gridCols) {
         Button diceBtn = new Button("Roll Dice 🎲");
         diceBtn.setLayoutX(10);
         diceBtn.setLayoutY(5);
@@ -450,6 +461,48 @@ public class Backgammon extends Application {
                     theGame.blackPlays(gridCols, dice1, dice2);
                     startingPlayer = true;
                 }
+            }
+        });
+
+        return diceBtn;
+    }
+    */
+    
+    private Button createDiceButton(String p1Name, String p2Name, GridPane[] gridCols) {
+        Button diceBtn = new Button("Roll Dice 🎲");
+        diceBtn.setLayoutX(10);
+        diceBtn.setLayoutY(5);
+        diceBtn.setPrefSize(150, 30);
+        diceBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px;");
+
+        one.setFont(Font.font(null, FontWeight.BOLD, 72));
+        two.setFont(Font.font(null, FontWeight.BOLD, 72));
+
+        one.setLayoutX(528);
+        one.setLayoutY(360);
+        one.setStyle("-fx-text-fill: white;");
+        two.setLayoutX(528);
+        two.setLayoutY(290);
+        two.setStyle("-fx-text-fill: white;");
+
+        diceBtn.setOnAction(event -> {
+            int dice1 = rollDice(difficulty);
+            int dice2 = rollDice(difficulty);
+
+            eventManager.notify("diceRolled", new int[]{dice1, dice2});
+
+            if (startingPlayer) {
+                if (dice1 == dice2) theGame.setTimes(4);
+                diceBtn.setText(p2Name + "'s Turn 🎲");
+                theGame.reset();
+                theGame.bluePlays(gridCols, dice1, dice2);
+                startingPlayer = false;
+            } else {
+                if (dice1 == dice2) theGame.setTimes(4);
+                diceBtn.setText(p1Name + "'s Turn 🎲");
+                theGame.reset();
+                theGame.blackPlays(gridCols, dice1, dice2);
+                startingPlayer = true;
             }
         });
 
@@ -504,12 +557,25 @@ public class Backgammon extends Application {
         parentPane.getChildren().add(surprise);
     }
 
-    public void startTimer() {
+   /* public void startTimer() {
         KeyFrame keyFrame = new KeyFrame(Duration.seconds(1), e -> {
             secondsElapsed++;
             int mins = secondsElapsed / 60;
             int secs = secondsElapsed % 60;
             timerLabel.setText(String.format("Time: %02d:%02d", mins, secs));
+        });
+        timeline = new Timeline(keyFrame);
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
+    }*/
+    
+    public void startTimer() {
+        KeyFrame keyFrame = new KeyFrame(Duration.seconds(1), e -> {
+            secondsElapsed++;
+            int mins = secondsElapsed / 60;
+            int secs = secondsElapsed % 60;
+            String timeString = String.format("Time: %02d:%02d", mins, secs);
+            eventManager.notify("timerUpdated", timeString);
         });
         timeline = new Timeline(keyFrame);
         timeline.setCycleCount(Timeline.INDEFINITE);
