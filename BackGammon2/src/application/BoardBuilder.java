@@ -59,7 +59,6 @@ public class BoardBuilder {
     }
 
 	public GridPane[] getGridColumns() {
-		// TODO Auto-generated method stub
 		return gridCols;
 	}
 	
@@ -85,7 +84,6 @@ public class BoardBuilder {
     }
 
 	public BoardBuilder addRollDiceButton(Button rollDiceButton) {
-		// TODO Auto-generated method stub
 		    rollDiceButton.setText("Roll Dice");
 		    rollDiceButton.setOnAction(e -> Backgammon.rollDice(Backgammon.difficulty));
 		    rollDiceButton.setLayoutX(500); // Adjust X position

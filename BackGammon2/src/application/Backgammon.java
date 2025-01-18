@@ -325,8 +325,9 @@ public class Backgammon extends Application {
 
     Label timerLabel = new Label("Time: 0s");
     public static GamePlay theGame;
-    private static Label one = new Label("?");
-    private static Label two = new Label("?");
+    
+    private static Label one = ComponentFactory.createLabel("?");
+    private static Label two = ComponentFactory.createLabel("?");
 
     public static Label getOne() {
         return one;
