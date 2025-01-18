@@ -100,11 +100,19 @@
 "duration":"298 seconds"
 }
 ,
+{
+"player1":"asd",
+"player2":"dsa",
+"winner":"asd",
+"difficulty":"Easy",
+"duration":"169 seconds"
+}
+,
   {
     "player1":"asd",
-    "player2":"dsa",
-    "winner":"asd",
+    "player2":"sda",
+    "winner":"sda",
     "difficulty":"Easy",
-    "duration":"169 seconds"
+    "duration":"157 seconds"
   }
 ]

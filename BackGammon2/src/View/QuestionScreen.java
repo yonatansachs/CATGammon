@@ -235,7 +235,7 @@ public class QuestionScreen {
         backgroundImageView.setEffect(new GaussianBlur(50));
 
         // Title Label
-        Label titleLabel = new Label("Question: " + difficulty2);
+        Label titleLabel = new Label("Dice Question Rolled: " + difficulty2);
         titleLabel.setStyle("-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 20;");
         titleLabel.setAlignment(Pos.CENTER);
 
