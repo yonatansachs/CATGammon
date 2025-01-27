@@ -99,13 +99,11 @@ public class GamePlay extends Pawns {
                 questions[i] = selectRandomSpot(rand);
             }
             used.add(questions[i]);
-            System.out.println("Question spot selected: " + questions[i]);
         }
         surprise = selectRandomSpot(rand);
         while(used.contains(surprise)){
             surprise = selectRandomSpot(rand);
         }
-        System.out.println("Surprise spot selected: " + surprise);
 
         // Place initial pawns
         initializePawns(boardCols);
@@ -1047,7 +1045,6 @@ public class GamePlay extends Pawns {
      */
     public void handleSurpriseSpot(GridPane[] columns, int col, boolean isBlue) {
         if (col == surprise && counter==0) {
-            System.out.println("Surprise spot reached!");
             counter++;
 
             SurprisePopUp pop = new SurprisePopUp();
@@ -1055,10 +1052,8 @@ public class GamePlay extends Pawns {
 
             if (isBlue) {
                 blueExtraTurnGranted = true;
-                System.out.println("Blue player granted an extra turn.");
             } else {
                 blackExtraTurnGranted = true;
-                System.out.println("Black player granted an extra turn.");
             }
 
             resetTurnCompletion();

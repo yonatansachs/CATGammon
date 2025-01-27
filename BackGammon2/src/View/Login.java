@@ -99,8 +99,9 @@ public class Login extends Application {
         manageQuestionsButton.setOnMouseEntered(e -> manageQuestionsButton.setStyle(buttonStyle + hoverStyle));
         manageQuestionsButton.setOnMouseExited(e -> manageQuestionsButton.setStyle(buttonStyle));
         manageQuestionsButton.setOnAction(event -> {
-            manageQuestions manageQuestionsScreen = new manageQuestions();
-            manageQuestionsScreen.start(primaryStage);
+        	adminLogin adminlogin = new adminLogin();
+        	adminlogin.start(primaryStage);
+           
         });
 
         loginLayout.getChildren().addAll(

@@ -224,7 +224,6 @@ public class Backgammon extends Application {
     
     @Override
     public void start(Stage primaryStage) {
-        System.out.println("ENTERING START METHOD (difficulty=" + difficulty + ")");
         
 
         // Create MenuBar
@@ -282,7 +281,6 @@ public class Backgammon extends Application {
                 ? "Player2" : Login.player2;
 
         String starter = startingPlayer ? p1Name : p2Name;
-        System.out.println("Starting Player: " + starter);
 
         initializeGame(primaryStage, starter);
 
@@ -373,7 +371,6 @@ public class Backgammon extends Application {
     }
 
     private void initializeGame(Stage primaryStage, String starterName) {
-        System.out.println("Initializing game with starting player: " + starterName);
         primaryStage.setTitle("Backgammon - " + starterName + " starts!");
     }
 
@@ -394,7 +391,7 @@ public class Backgammon extends Application {
         for (int spot : questions) {
             if (spot != -1) {
                 Label qm = new Label("?");
-                qm.setStyle("-fx-text-fill: purple; -fx-font-size: 72;");
+                qm.setStyle("-fx-text-fill: purple; -fx-font-size: 72; -fx-font-weight: bold;");
 
                 double layoutX = SecondLayer.cols[spot];
                 double layoutY = (spot < 12) ? 10 : 630;
@@ -438,7 +435,7 @@ public class Backgammon extends Application {
     public static void stopTimer() {
         if (timeline != null) {
             timeline.stop();
-            System.out.println("Final elapsed time: " + secondsElapsed + " seconds");
+            //System.out.println("Final elapsed time: " + secondsElapsed + " seconds");
         }
     }
 

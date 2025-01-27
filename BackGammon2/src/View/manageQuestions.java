@@ -5,7 +5,11 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -27,8 +31,7 @@ public class manageQuestions extends Application {
     private ComboBox<Integer> correctAnswerIndexField;
     private ComboBox<String> difficultyField;
 
-    // Define the correct path to questions.json (same as SysData)
-    private final String QUESTIONS_FILE = "src/View/questions.json"; // Ensure this is the correct path
+    private final String QUESTIONS_FILE = "src/View/questions.json";
 
     public static void main(String[] args) {
         launch(args);
@@ -38,54 +41,58 @@ public class manageQuestions extends Application {
     public void start(Stage primaryStage) {
         questions = loadQuestions();
         primaryStage.setTitle("Manage Questions");
-        VBox root = createMainLayout(primaryStage);
-        Scene scene = new Scene(root, 600, 700);
+
+        // Create background
+        Image backgroundImage = new Image(getClass().getResourceAsStream("backgammon2.png"));
+        ImageView backgroundImageView = new ImageView(backgroundImage);
+        backgroundImageView.setFitWidth(800);
+        backgroundImageView.setFitHeight(700);
+        backgroundImageView.setPreserveRatio(false);
+        backgroundImageView.setEffect(new GaussianBlur(50));
+
+        // Create the main layout
+        VBox mainLayout = createMainLayout(primaryStage);
+
+        // Wrap everything in a StackPane for the background
+        StackPane root = new StackPane();
+        root.getChildren().addAll(backgroundImageView, mainLayout);
+
+        Scene scene = new Scene(root, 800, 700);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    /**
-     * Creates the main layout containing all sections.
-     */
     private VBox createMainLayout(Stage primaryStage) {
-        VBox root = new VBox(10);
-        root.setPadding(new Insets(10));
+        VBox root = new VBox(20);
+        root.setPadding(new Insets(20));
+        root.setAlignment(Pos.CENTER); // Center everything
+        root.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6); -fx-padding: 20; -fx-border-radius: 10; -fx-border-color: white;");
+
+        Label titleLabel = new Label("Manage Questions");
+        titleLabel.setStyle("-fx-font-size: 30; -fx-font-weight: bold; -fx-text-fill: white;");
 
         GridPane addGrid = createAddQuestionGrid();
         VBox editBox = createEditSection();
         VBox deleteBox = createDeleteSection();
         VBox controlButtonsSection = createControlButtonsSection(primaryStage);
 
-        root.getChildren().addAll(
-                new Label("Add Question"),
-                addGrid,
-                editBox,
-                deleteBox,
-                controlButtonsSection
-        );
-
+        root.getChildren().addAll(titleLabel, addGrid, editBox, deleteBox, controlButtonsSection);
         updateComboBoxes();
         return root;
     }
 
-    /**
-     * Creates the "Clear Fields" and "Back" buttons.
-     */
     private VBox createControlButtonsSection(Stage primaryStage) {
         Button clearFieldsButton = new Button("Clear Fields");
         clearFieldsButton.setOnAction(event -> clearFields());
 
         Button backButton = new Button("Back");
         backButton.setOnAction(event -> {
-            
             Login loginScreen = new Login();
             loginScreen.start(primaryStage);
-            //primaryStage.close(); // Placeholder action
         });
 
-        // Optional styling
-        clearFieldsButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
-        backButton.setStyle("-fx-background-color: #FF6347; -fx-text-fill: white;");
+        clearFieldsButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold; -fx-background-radius: 10;");
+        backButton.setStyle("-fx-background-color: #FF6347; -fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold; -fx-background-radius: 10;");
 
         VBox buttonSection = new VBox(10, clearFieldsButton, backButton);
         buttonSection.setPadding(new Insets(10));
@@ -94,13 +101,11 @@ public class manageQuestions extends Application {
         return buttonSection;
     }
 
-    /**
-     * Creates the grid for adding a new question.
-     */
     private GridPane createAddQuestionGrid() {
         GridPane addGrid = new GridPane();
         addGrid.setHgap(10);
         addGrid.setVgap(10);
+        addGrid.setAlignment(Pos.CENTER); // Center the grid
 
         questionTextField = new TextField();
         option1Field = new TextField();
@@ -113,52 +118,81 @@ public class manageQuestions extends Application {
         difficultyField = new ComboBox<>();
         difficultyField.getItems().addAll("Easy", "Medium", "Hard");
 
-        addGrid.add(new Label("Question Text:"), 0, 0);
+        addGrid.add(new Label("Question Text:") {{
+            setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;");
+        }}, 0, 0);
         addGrid.add(questionTextField, 1, 0);
-        addGrid.add(new Label("Option 1:"), 0, 1);
+
+        addGrid.add(new Label("Option 1:") {{
+            setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;");
+        }}, 0, 1);
         addGrid.add(option1Field, 1, 1);
-        addGrid.add(new Label("Option 2:"), 0, 2);
+
+        addGrid.add(new Label("Option 2:") {{
+            setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;");
+        }}, 0, 2);
         addGrid.add(option2Field, 1, 2);
-        addGrid.add(new Label("Option 3:"), 0, 3);
+
+        addGrid.add(new Label("Option 3:") {{
+            setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;");
+        }}, 0, 3);
         addGrid.add(option3Field, 1, 3);
-        addGrid.add(new Label("Option 4:"), 0, 4);
+
+        addGrid.add(new Label("Option 4:") {{
+            setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;");
+        }}, 0, 4);
         addGrid.add(option4Field, 1, 4);
-        addGrid.add(new Label("Correct Answer Index (0-3):"), 0, 5);
+
+        addGrid.add(new Label("Correct Answer Index (0-3):") {{
+            setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;");
+        }}, 0, 5);
         addGrid.add(correctAnswerIndexField, 1, 5);
-        addGrid.add(new Label("Difficulty:"), 0, 6);
+
+        addGrid.add(new Label("Difficulty:") {{
+            setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;");
+        }}, 0, 6);
         addGrid.add(difficultyField, 1, 6);
 
         Button addButton = new Button("Add Question");
+        addButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold; -fx-background-radius: 10;");
         addButton.setOnAction(e -> addQuestion());
         addGrid.add(addButton, 0, 7, 2, 1);
 
         return addGrid;
     }
 
-    /**
-     * Creates the section for editing an existing question.
-     */
     private VBox createEditSection() {
         Label editLabel = new Label("Edit Question");
+        editLabel.setStyle("-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: white;");
         editComboBox = new ComboBox<>();
+        editComboBox.setPrefWidth(300);
+        editComboBox.setStyle("-fx-font-size: 16;");
         editComboBox.setOnAction(e -> loadQuestionForEdit());
 
         Button editButton = new Button("Edit Question");
+        editButton.setStyle("-fx-background-color: #FFC107; -fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold; -fx-background-radius: 10;");
         editButton.setOnAction(e -> editQuestion());
+        
 
-        return new VBox(10, editLabel, editComboBox, editButton);
+        return new VBox(10, editLabel, editComboBox, editButton) {{
+            setAlignment(Pos.CENTER);
+        }};
     }
 
-    /**
-     * Creates the section for deleting an existing question.
-     */
     private VBox createDeleteSection() {
         Label deleteLabel = new Label("Delete Question");
+        deleteLabel.setStyle("-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: white;");
         deleteComboBox = new ComboBox<>();
+        deleteComboBox.setPrefWidth(300);
+        deleteComboBox.setStyle("-fx-font-size: 16;");
+
         Button deleteButton = new Button("Delete Question");
+        deleteButton.setStyle("-fx-background-color: #F44336; -fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold; -fx-background-radius: 10;");
         deleteButton.setOnAction(e -> deleteQuestion());
 
-        return new VBox(10, deleteLabel, deleteComboBox, deleteButton);
+        return new VBox(10, deleteLabel, deleteComboBox, deleteButton) {{
+            setAlignment(Pos.CENTER);
+        }};
     }
 
     /**
@@ -370,12 +404,18 @@ public class manageQuestions extends Application {
     /**
      * Loads a selected question's details into the form for editing.
      */
+    /**
+     * Loads a selected question's details into the form for editing.
+     */
     private void loadQuestionForEdit() {
+
         String selected = editComboBox.getValue();
-        if (selected == null) return;
+        // Get the selected question text
+        if (selected == null || selected.isEmpty()) return;
 
         for (Question q : questions) {
             if (q.getQuestionText().equals(selected)) {
+                // Populate the fields with the selected question's details
                 questionTextField.setText(q.getQuestionText());
                 option1Field.setText(q.getOptions()[0]);
                 option2Field.setText(q.getOptions()[1]);
@@ -388,24 +428,30 @@ public class manageQuestions extends Application {
         }
     }
 
+
     /**
      * Edits the selected question with the current form values.
      */
     private void editQuestion() {
-        String selected = editComboBox.getValue();
-        if (selected == null) {
+        String selected = editComboBox.getValue(); // Get the selected question text
+        if (selected == null || selected.isEmpty()) {
             showAlert(Alert.AlertType.ERROR, "Error", "No question selected.");
             return;
         }
 
-        if (!validateFields()) return;
+        if (!validateFields()) {
+            return; // Ensure all fields are valid before proceeding
+        }
 
         try {
-            int index = correctAnswerIndexField.getValue();
-            if (index < 0 || index > 3) throw new NumberFormatException();
+            int correctAnswerIndex = correctAnswerIndexField.getValue(); // Get the correct answer index
+            if (correctAnswerIndex < 0 || correctAnswerIndex > 3) {
+                throw new NumberFormatException("Correct Answer Index must be between 0 and 3.");
+            }
 
             for (Question q : questions) {
                 if (q.getQuestionText().equals(selected)) {
+                    // Update the question details with the values from the fields
                     q.setQuestionText(questionTextField.getText());
                     q.setOptions(new String[]{
                             option1Field.getText(),
@@ -413,19 +459,21 @@ public class manageQuestions extends Application {
                             option3Field.getText(),
                             option4Field.getText()
                     });
-                    q.setCorrectAnswerIndex(index);
+                    q.setCorrectAnswerIndex(correctAnswerIndex);
                     q.setDifficulty(difficultyField.getValue());
-                    break;
+                    break; // Exit the loop after updating
                 }
             }
 
-            saveQuestions();
+            saveQuestions(); // Save the updated questions list to the JSON file
             showAlert(Alert.AlertType.INFORMATION, "Success", "Question edited successfully.");
-            updateComboBoxes();
-        } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.ERROR, "Error", "Correct Answer Index must be a number between 0 and 3.");
+            updateComboBoxes(); // Refresh the ComboBox to reflect any changes
+            clearFields(); // Clear the fields after editing
+        } catch (Exception e) {
+            showAlert(Alert.AlertType.ERROR, "Error", "Failed to edit question: " + e.getMessage());
         }
     }
+
 
     /**
      * Deletes the selected question from the list.
@@ -458,7 +506,6 @@ public class manageQuestions extends Application {
             deleteComboBox.getItems().add(q.getQuestionText());
         }
     }
-
     /**
      * Clears all form fields.
      */
@@ -470,6 +517,8 @@ public class manageQuestions extends Application {
         option4Field.clear();
         correctAnswerIndexField.setValue(null);
         difficultyField.setValue(null);
+        editComboBox.setValue(null);
+        deleteComboBox.setValue(null);
     }
 
     /**
