@@ -1,6 +1,8 @@
 
 package application;
 
+import java.awt.Shape;
+import java.util.Optional;
 import java.util.Random;
 
 import Control.GamePlay;
@@ -75,6 +77,15 @@ public class Backgammon extends Application {
             System.out.println("Error playing music: " + e.getMessage());
         }
     }    
+    private void playMusic2(String filePath) {
+        try {
+            Media media = new Media(getClass().getResource(filePath).toExternalForm()); // Load the file
+            mediaPlayer = new MediaPlayer(media);
+            mediaPlayer.play(); // Start playing
+        } catch (Exception e) {
+            System.out.println("Error playing music: " + e.getMessage());
+        }
+    }    
     private void stopMusic() {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
@@ -102,6 +113,8 @@ public class Backgammon extends Application {
         changeColorItem.setOnAction(e -> changeBoardColor());
         settingsMenu.getItems().addAll(changeColorItem);
        
+       
+        
         Menu musicSettings = new Menu("Music");
         MenuItem stopMusicItem = new MenuItem("Stop Music");
         MenuItem resumeMusicItem = new MenuItem("Resume Music");
@@ -123,13 +136,16 @@ public class Backgammon extends Application {
         return menuBar;
     }
 
-
+    
+   
 
 
     private void endGame() {
         // 1. Stop the timer if you're using it
         stopTimer();
         stopMusic();
+        one = ComponentFactory.createLabel("?");
+        two = ComponentFactory.createLabel("?");
         secondsElapsed = 0; // reset or clear as needed
 
         // 2. Close the current Backgammon stage
@@ -149,8 +165,9 @@ public class Backgammon extends Application {
 	private void restartGame() {
     // Optionally, you could prompt the user for confirmation here
     // using an Alert or Dialog.
-       stopMusic();
-
+     stopMusic();
+     one = ComponentFactory.createLabel("?");
+     two = ComponentFactory.createLabel("?");
     // 1. Stop the timer
     stopTimer();
     secondsElapsed = 0;
@@ -328,13 +345,23 @@ public class Backgammon extends Application {
             eventManager.notify("diceRolled", new int[]{dice1, dice2});
 
             if (startingPlayer) {
-                if (dice1 == dice2) theGame.setTimes(4);
+                if (dice1 == dice2) 
+                	{
+                	theGame.setTimes(4);
+                	playMusic2("/View/bomboclat.wav");
+                	
+                	}
                 diceBtn.setText(p2Name + "'s Turn 🎲");
                 theGame.reset();
                 theGame.bluePlays(gridCols, dice1, dice2);
                 startingPlayer = false;
             } else {
-                if (dice1 == dice2) theGame.setTimes(4);
+                if (dice1 == dice2)
+                	{
+                    	theGame.setTimes(4);
+                    	playMusic2("/View/bomboclat.wav");
+                    }
+                
                 diceBtn.setText(p1Name + "'s Turn 🎲");
                 theGame.reset();
                 theGame.blackPlays(gridCols, dice1, dice2);
