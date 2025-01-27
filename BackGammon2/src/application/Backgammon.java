@@ -56,7 +56,7 @@ public class Backgammon extends Application {
     private static Label one = ComponentFactory.createLabel("?");
     private static Label two = ComponentFactory.createLabel("?");
     private MediaPlayer mediaPlayer; // Declare the MediaPlayer at the class level
-
+    private MediaPlayer mediaPlayer2;
  
 
     public static Label getOne() {
@@ -79,9 +79,9 @@ public class Backgammon extends Application {
     }    
     private void playMusic2(String filePath) {
         try {
-            Media media = new Media(getClass().getResource(filePath).toExternalForm()); // Load the file
-            mediaPlayer = new MediaPlayer(media);
-            mediaPlayer.play(); // Start playing
+            Media media2 = new Media(getClass().getResource(filePath).toExternalForm()); // Load the file
+            mediaPlayer2 = new MediaPlayer(media2);
+            mediaPlayer2.play(); // Start playing
         } catch (Exception e) {
             System.out.println("Error playing music: " + e.getMessage());
         }
