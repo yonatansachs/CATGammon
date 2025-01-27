@@ -2,6 +2,10 @@
 package application;
 
 import java.awt.Shape;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Optional;
 import java.util.Random;
 
@@ -69,21 +73,64 @@ public class Backgammon extends Application {
 
     private void playMusic(String filePath) {
         try {
-            Media media = new Media(getClass().getResource(filePath).toExternalForm()); // Load the file
+            // Get the resource as a stream
+            InputStream inputStream = getClass().getResourceAsStream(filePath);
+            if (inputStream == null) {
+                throw new IllegalArgumentException("Resource not found: " + filePath);
+            }
+
+            // Create a temporary file
+            File tempFile = File.createTempFile("temp_music", ".wav");
+            tempFile.deleteOnExit(); // Automatically delete the file when the program exits
+
+            // Write the input stream to the temporary file
+            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            }
+
+            // Use the temporary file for the Media object
+            Media media = new Media(tempFile.toURI().toString());
             mediaPlayer = new MediaPlayer(media);
             mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE); // Loop the music
             mediaPlayer.play(); // Start playing
         } catch (Exception e) {
             System.out.println("Error playing music: " + e.getMessage());
+            e.printStackTrace();
         }
-    }    
+    }
+ 
     private void playMusic2(String filePath) {
-        try {
-            Media media2 = new Media(getClass().getResource(filePath).toExternalForm()); // Load the file
+    	try {
+            // Get the resource as a stream
+            InputStream inputStream = getClass().getResourceAsStream(filePath);
+            if (inputStream == null) {
+                throw new IllegalArgumentException("Resource not found: " + filePath);
+            }
+
+            // Create a temporary file
+            File tempFile = File.createTempFile("temp_music", ".wav");
+            tempFile.deleteOnExit(); // Automatically delete the file when the program exits
+
+            // Write the input stream to the temporary file
+            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            }
+
+            // Use the temporary file for the Media object
+            Media media2 = new Media(tempFile.toURI().toString());
             mediaPlayer2 = new MediaPlayer(media2);
             mediaPlayer2.play(); // Start playing
         } catch (Exception e) {
             System.out.println("Error playing music: " + e.getMessage());
+            e.printStackTrace();
         }
     }    
     private void stopMusic() {
