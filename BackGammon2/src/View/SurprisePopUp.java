@@ -6,19 +6,59 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.effect.GaussianBlur;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+
+import application.Backgammon;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-
 public class SurprisePopUp {
 
+	private MediaPlayer mediaPlayer;
+
+	 private void playMusic2(String filePath) {
+	    	try {
+	            // Get the resource as a stream
+	            InputStream inputStream = getClass().getResourceAsStream(filePath);
+	            if (inputStream == null) {
+	                throw new IllegalArgumentException("Resource not found: " + filePath);
+	            }
+
+	            // Create a temporary file
+	            File tempFile = File.createTempFile("temp_music", ".wav");
+	            tempFile.deleteOnExit(); // Automatically delete the file when the program exits
+
+	            // Write the input stream to the temporary file
+	            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+	                byte[] buffer = new byte[1024];
+	                int bytesRead;
+	                while ((bytesRead = inputStream.read(buffer)) != -1) {
+	                    outputStream.write(buffer, 0, bytesRead);
+	                }
+	            }
+
+	            // Use the temporary file for the Media object
+	            Media media2 = new Media(tempFile.toURI().toString());
+	            mediaPlayer = new MediaPlayer(media2);
+	            mediaPlayer.play(); // Start playing
+	        } catch (Exception e) {
+	            System.out.println("Error playing music: " + e.getMessage());
+	            e.printStackTrace();
+	        }
+	    }    
     public void show(Stage ownerStage) {
         // Create a new stage for the popup
+    	playMusic2("/View/yay.wav");
         Stage popupStage = new Stage();
 
         // Set the popup properties

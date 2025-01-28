@@ -1,4 +1,5 @@
 package View;
+
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -6,11 +7,14 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 public class adminLogin extends Application {
@@ -20,26 +24,51 @@ public class adminLogin extends Application {
         // Background Image with GaussianBlur
         Image backgroundImage = new Image(getClass().getResourceAsStream("backgammon2.png"));
         ImageView backgroundImageView = new ImageView(backgroundImage);
-        backgroundImageView.setFitWidth(400);
-        backgroundImageView.setFitHeight(300);
+        backgroundImageView.setFitWidth(600);
+        backgroundImageView.setFitHeight(400);
         backgroundImageView.setPreserveRatio(false);
         backgroundImageView.setEffect(new GaussianBlur(50));
 
-        // Create UI components
-        Label titleLabel = new Label("Admin Login");
-        titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
+        // Semi-transparent overlay for contrast
+        Rectangle overlay = new Rectangle(600, 400);
+        overlay.setFill(Color.rgb(0, 0, 0, 0.6));
 
+        // Title
+        Label titleLabel = new Label("Admin Login");
+        titleLabel.setStyle("-fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: white;");
+        titleLabel.setEffect(new DropShadow(5, Color.BLACK));
+
+        // Username Label and Field
         Label usernameLabel = new Label("Username:");
         usernameLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
         TextField usernameField = new TextField();
+        usernameField.setPromptText("Enter your username");
+        usernameField.setStyle("-fx-font-size: 14px; -fx-background-radius: 10; -fx-padding: 5;");
 
+        // Password Label and Field
         Label passwordLabel = new Label("Password:");
         passwordLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
         PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Enter your password");
+        passwordField.setStyle("-fx-font-size: 14px; -fx-background-radius: 10; -fx-padding: 5;");
 
+        // Login Button
         Button loginButton = new Button("Login");
-        loginButton.setStyle("-fx-font-size: 14px; -fx-pref-width: 150; -fx-background-radius: 10;");
+        loginButton.setStyle(
+                "-fx-font-size: 16px; -fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10;");
+        loginButton.setPrefWidth(150);
 
+        // Back Button
+        Button backButton = new Button("Back");
+        backButton.setStyle(
+                "-fx-font-size: 16px; -fx-background-color: #FF6347; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10;");
+        backButton.setPrefWidth(150);
+        backButton.setOnAction(event -> {
+            Login loginScreen = new Login();
+            loginScreen.start(primaryStage);
+        });
+
+        // Status Label
         Label statusLabel = new Label();
         statusLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: red;");
 
@@ -57,14 +86,17 @@ public class adminLogin extends Application {
             }
         });
 
-        VBox loginLayout = new VBox(10, titleLabel, usernameLabel, usernameField, passwordLabel, passwordField, loginButton, statusLabel);
+        // Layout
+        VBox loginLayout = new VBox(15, titleLabel, usernameLabel, usernameField, passwordLabel, passwordField, loginButton, backButton, statusLabel);
         loginLayout.setAlignment(Pos.CENTER);
-        loginLayout.setStyle("-fx-padding: 20; -fx-background-color: rgba(0, 0, 0, 0.5);");
+        loginLayout.setStyle("-fx-padding: 20;");
+        loginLayout.setMaxWidth(350);
 
         StackPane root = new StackPane();
-        root.getChildren().addAll(backgroundImageView, loginLayout);
+        root.getChildren().addAll(backgroundImageView, overlay, loginLayout);
 
-        Scene scene = new Scene(root, 400, 300);
+        // Scene
+        Scene scene = new Scene(root, 600, 400);
         primaryStage.setTitle("Admin Login");
         primaryStage.setScene(scene);
         primaryStage.show();

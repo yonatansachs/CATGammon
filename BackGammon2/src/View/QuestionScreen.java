@@ -187,6 +187,9 @@ public class QuestionScreen {
 }*/
 package View;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.Random;
 
 import Control.GamePlay;
@@ -204,6 +207,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -212,7 +217,39 @@ public class QuestionScreen {
     private final SysData sysData = SysData.getInstance(); // Singleton SysData
     private boolean answeredCorrectly;
     public String gameDifficulty = Backgammon.difficulty;
+    private MediaPlayer mediaPlayer2;
 
+
+    private void playMusic2(String filePath) {
+    	try {
+            // Get the resource as a stream
+            InputStream inputStream = getClass().getResourceAsStream(filePath);
+            if (inputStream == null) {
+                throw new IllegalArgumentException("Resource not found: " + filePath);
+            }
+
+            // Create a temporary file
+            File tempFile = File.createTempFile("temp_music", ".wav");
+            tempFile.deleteOnExit(); // Automatically delete the file when the program exits
+
+            // Write the input stream to the temporary file
+            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            }
+
+            // Use the temporary file for the Media object
+            Media media2 = new Media(tempFile.toURI().toString());
+            mediaPlayer2 = new MediaPlayer(media2);
+            mediaPlayer2.play(); // Start playing
+        } catch (Exception e) {
+            System.out.println("Error playing music: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }    
     public boolean show(Stage owner, String difficulty2, String from) {
         // Fetch a random question based on the given difficulty
     	 
@@ -298,16 +335,20 @@ public class QuestionScreen {
     }
 
     private void showCorrectMessage(Stage questionStage) {
+    	playMusic2("/View/Correct.wav");
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Correct!");
         alert.setHeaderText(null);
         alert.setContentText("Congratulations! Your answer is correct.");
         alert.showAndWait();
+        
+
         questionStage.close(); // Close the question stage
     }
 
     private void showWrongMessage(Stage questionStage, String from, String difficulty) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
+    	playMusic2("/View/Wrong.wav");
+    	Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle("Wrong!");
         alert.setHeaderText(null);
 

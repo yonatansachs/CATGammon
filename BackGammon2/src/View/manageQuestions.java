@@ -57,7 +57,7 @@ public class manageQuestions extends Application {
         StackPane root = new StackPane();
         root.getChildren().addAll(backgroundImageView, mainLayout);
 
-        Scene scene = new Scene(root, 800, 700);
+        Scene scene = new Scene(root, 800, 800);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -94,7 +94,7 @@ public class manageQuestions extends Application {
         clearFieldsButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold; -fx-background-radius: 10;");
         backButton.setStyle("-fx-background-color: #FF6347; -fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold; -fx-background-radius: 10;");
 
-        VBox buttonSection = new VBox(10, clearFieldsButton, backButton);
+        VBox buttonSection = new VBox(10,clearFieldsButton,backButton);
         buttonSection.setPadding(new Insets(10));
         buttonSection.setAlignment(Pos.CENTER);
 

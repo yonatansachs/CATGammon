@@ -386,6 +386,7 @@ public class Backgammon extends Application {
         diceBtn.setOnAction(event -> {
             int dice1 = rollDice(difficulty);
             int dice2 = rollDice(difficulty);
+            playMusic2("/View/DiceRoll.wav");
 
             eventManager.notify("diceRolled", new int[]{dice1, dice2});
 
